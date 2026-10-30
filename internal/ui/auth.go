@@ -252,16 +252,22 @@ func (u *UI) authLayout(width, height int) {
 	// The QR needs its original module size to remain reliably scannable.
 	// Keep the instructions beside it on wider screens; on small screens use
 	// the dedicated full-screen QR action rather than scaling QR modules.
-	if width < 100 {
+	if width < 88 {
 		u.loginColumns.SetDirection(tview.FlexRow)
 		u.loginColumns.ResizeItem(u.loginSpacer, 0, 0)
 		u.loginColumns.ResizeItem(u.loginInstructions, 12, 0)
 		u.loginColumns.ResizeItem(u.loginQRCenter, 0, 1)
 	} else {
+		// Reserve the native QR module width and give the rest to the
+		// four-step instructions, rather than splitting both sides equally.
 		u.loginColumns.SetDirection(tview.FlexColumn)
 		u.loginColumns.ResizeItem(u.loginInstructions, 0, 1)
 		u.loginColumns.ResizeItem(u.loginSpacer, 2, 0)
-		u.loginColumns.ResizeItem(u.loginQRCenter, 0, 1)
+		qrColumnWidth := 53
+		if u.qrWidth > 0 {
+			qrColumnWidth = u.qrWidth + 8
+		}
+		u.loginColumns.ResizeItem(u.loginQRCenter, qrColumnWidth, 0)
 	}
 	// Keep the scannable module size fixed, with a small white quiet zone,
 	// and place the white code in the centre of the dark pairing column.
@@ -271,7 +277,12 @@ func (u *UI) authLayout(width, height int) {
 	}
 	u.loginQRRow.ResizeItem(u.loginQR, qrWidth, 0)
 	u.loginQRCenter.ResizeItem(u.loginQRRow, qrHeight, 0)
-	if u.qrWidth > 0 && (width < u.qrWidth+8 || height < u.qrHeight+12) {
+	tooSmall := width < u.qrWidth+36 || height < u.qrHeight+12
+	if width < 88 {
+		// A stacked layout needs space for the instructions above the QR.
+		tooSmall = width < u.qrWidth+8 || height < u.qrHeight+28
+	}
+	if u.qrWidth > 0 && tooSmall {
 		u.loginQR.SetBackgroundColor(slate)
 		u.loginQR.SetTextColor(tcell.ColorWhite)
 		u.loginQR.SetText("[#8696A0]QR ready — press Q for full-screen QR[-]")
