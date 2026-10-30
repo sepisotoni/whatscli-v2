@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/sepisotoni/whatshell-go/internal/store"
 	"path/filepath"
 	"testing"
+
+	"github.com/sepisotoni/whatshell-go/internal/store"
 )
 
 func TestSeedDemoIsFictionalAndIdempotent(t *testing.T) {
