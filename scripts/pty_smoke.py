@@ -48,16 +48,36 @@ def main(binary: str) -> None:
                 raise RuntimeError("demo TUI did not draw before timeout")
             if b"WHATSHELL" not in output and b"Whatshell" not in output:
                 raise RuntimeError(f"terminal UI header missing (exit={proc.poll()}, output={bytes(output[-600:])!r})")
+            def pump_until_exit(seconds):
+                deadline = time.monotonic() + seconds
+                while time.monotonic() < deadline:
+                    if proc.poll() is not None:
+                        return proc.returncode
+                    ready, _, _ = select.select([master], [], [], 0.05)
+                    if ready:
+                        try:
+                            os.read(master, 65536)
+                        except OSError:
+                            if proc.poll() is not None:
+                                return proc.returncode
+                return None
+
             for cols, rows in [(75, 24), (40, 20), (100, 32)]:
                 fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
                 os.killpg(proc.pid, signal.SIGWINCH)
-                time.sleep(0.12)
+                # Drain redraw traffic so the app cannot block on its own output.
+                select.select([master], [], [], 0.12)
+                try:
+                    os.read(master, 65536)
+                except OSError:
+                    pass
             os.write(master, b"/quit\r")
-            try:
-                code = proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
+            code = pump_until_exit(5)
+            if code is None:
                 os.write(master, b"\x03")
-                code = proc.wait(timeout=3)
+                code = pump_until_exit(3)
+            if code is None:
+                raise RuntimeError("demo did not quit after /quit and Ctrl+C")
             if code != 0:
                 raise RuntimeError(f"demo exited with status {code}")
             if os.path.exists(real_home):
