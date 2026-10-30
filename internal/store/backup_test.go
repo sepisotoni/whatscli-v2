@@ -29,7 +29,7 @@ func TestBackupUsesPrivateFileAndPreservesData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer restored.Close()
+	defer func() { _ = restored.Close() }()
 	rows, err := restored.Messages(ctx, "friend@s.whatsapp.net", 5)
 	if err != nil || len(rows) != 1 || rows[0].Body != "kept" {
 		t.Fatalf("snapshot missing message: %+v %v", rows, err)
