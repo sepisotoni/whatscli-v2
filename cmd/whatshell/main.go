@@ -26,9 +26,13 @@ func main() {
 
 func run() error {
 	doctorMode := flag.Bool("doctor", false, "check local storage and SQLite integrity without connecting to WhatsApp")
+	demoMode := flag.Bool("demo", false, "run an isolated UI demo with fictional messages (no WhatsApp connection)")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
+	if *demoMode {
+		return runDemo(ctx)
+	}
 	paths, err := config.Resolve()
 	if err != nil {
 		return err

@@ -241,6 +241,10 @@ func (u *UI) submit() {
 		u.notice("Choose a chat first (Ctrl+N or /chat PHONE)")
 		return
 	}
+	if u.client == nil {
+		u.notice("DEMO MODE: sending disabled (no WhatsApp connection)")
+		return
+	}
 	u.busy = true
 	u.notice("Sending…")
 	chat := u.chat
@@ -268,6 +272,14 @@ func (u *UI) command(raw string) {
 	cmd, arg := parts[0], ""
 	if len(parts) == 2 {
 		arg = strings.TrimSpace(parts[1])
+	}
+	if u.client == nil {
+		switch cmd {
+		case "/attach", "/download", "/poll", "/logout":
+			u.notice("DEMO MODE: WhatsApp operations disabled")
+			u.input.SetText("")
+			return
+		}
 	}
 	switch cmd {
 	case "/help":
@@ -682,6 +694,10 @@ func (u *UI) handle(evt wa.Event) {
 }
 
 func (u *UI) Run(ctx context.Context) error {
+	if u.client == nil {
+		u.notice("DEMO MODE — fictional local data only; WhatsApp not connected")
+		return u.app.Run()
+	}
 	u.client.Start(ctx, func(evt wa.Event) {
 		u.app.QueueUpdateDraw(func() { u.handle(evt) })
 	})
