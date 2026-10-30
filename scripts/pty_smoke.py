@@ -22,9 +22,15 @@ def main(binary: str) -> None:
         proc = None
         try:
             fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 32, 100, 0, 0))
+            # TCell opens /dev/tty. Make the PTY a controlling terminal
+            # after setsid() rather than merely redirecting standard streams.
+            def take_controlling_tty():
+                os.setsid()
+                fcntl.ioctl(slave, termios.TIOCSCTTY, 0)
+
             proc = subprocess.Popen([binary, "--demo"], stdin=slave,
                                     stdout=slave, stderr=slave,
-                                    start_new_session=True, env=env)
+                                    preexec_fn=take_controlling_tty, env=env)
             os.close(slave)
             slave = -1
             output = bytearray()
@@ -41,7 +47,7 @@ def main(binary: str) -> None:
             else:
                 raise RuntimeError("demo TUI did not draw before timeout")
             if b"WHATSHELL" not in output and b"Whatshell" not in output:
-                raise RuntimeError("terminal output missing WhatsCLI UI header")
+                raise RuntimeError(f"terminal UI header missing (exit={proc.poll()}, output={bytes(output[-600:])!r})")
             for cols, rows in [(75, 24), (40, 20), (100, 32)]:
                 fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
                 os.killpg(proc.pid, signal.SIGWINCH)
