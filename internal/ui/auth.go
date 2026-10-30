@@ -25,24 +25,15 @@ func (u *UI) setupAuthentication() {
 	u.welcomeQuit.SetLabelColor(tcell.ColorWhite)
 	u.welcomeQuit.SetSelectedFunc(func() { u.app.Stop() })
 
-	brand := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
-	brand.SetBackgroundColor(darker)
-	brand.SetText("\n[#25D366::b]◆[-] [#E9EDEF::b]WhatsCLI[-]  [#8696A0] /  PRIVATE TERMINAL WORKSPACE[-]")
-
-	// A lightweight 5-frame pulse creates a living interface without blocking
-	// input or requiring a graphics-capable terminal.
+	// A distinct terminal chat mark with pulsing symmetric rails.
 	u.welcomeGlow = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	u.welcomeGlow.SetBackgroundColor(slate)
-	u.welcomeGlow.SetText("\n[#25D366]◆  ────────  ◆  ────────  ◆[-]")
+	u.welcomeGlow.SetText(welcomeLogoFrame(0))
 	hero := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	hero.SetBackgroundColor(slate)
-	hero.SetText("\n[#8696A0::b]A QUIETER WAY TO STAY CONNECTED[-]\n\n" +
-		"[#E9EDEF::b]Your conversations.\nYour terminal.[-]\n\n" +
-		"[#B5C3C8]A thoughtful keyboard-first space for your chats,\n" +
-		"available over SSH — without a browser or desktop. [-]\n\n" +
-		"[#25D366]●[-] [#CAD5D7]Connected through your phone[-]     " +
-		"[#25D366]●[-] [#CAD5D7]Local chat history[-]     " +
-		"[#25D366]●[-] [#CAD5D7]Keyboard + mouse[-]")
+	hero.SetText("\n[#E9EDEF::b]Welcome to [#00E99A::b]WhatsCLI[-]\n\n" +
+		"[#B5C3C8]Your conversations. Your terminal.[-]\n\n" +
+		"[#245147]────────────────────────────────────────[-]")
 	actions := tview.NewFlex().SetDirection(tview.FlexColumn)
 	actions.AddItem(nil, 0, 1, false).
 		AddItem(u.welcomeButton, 24, 0, true).
@@ -51,16 +42,17 @@ func (u *UI) setupAuthentication() {
 		AddItem(nil, 0, 1, false)
 	details := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	details.SetBackgroundColor(slate)
-	details.SetText("[#8696A0]INDEPENDENT PROJECT   ·   NOT AFFILIATED WITH WHATSAPP OR META[-]\n" +
-		"[#8696A0]Next: review the unofficial-client notice before linking a device.[-]")
+	details.SetText("[#607E79]INDEPENDENT PROJECT  ·  NOT AFFILIATED WITH WHATSAPP / META[-]\n" +
+		"[#607E79]Designed for keyboard, mouse, and SSH terminals.[-]")
 	card := tview.NewFlex().SetDirection(tview.FlexRow)
-	card.AddItem(u.welcomeGlow, 4, 0, false).
+	card.AddItem(nil, 1, 0, false).
+		AddItem(u.welcomeGlow, 8, 0, false).
 		AddItem(hero, 0, 1, false).
 		AddItem(actions, 3, 0, true).
 		AddItem(details, 4, 0, false)
 	card.SetBackgroundColor(slate)
-	card.SetBorder(true).SetBorderColor(tcell.NewRGBColor(48, 69, 71))
-	card.SetTitle("  Welcome to WhatsCLI  ").SetTitleColor(green)
+	card.SetBorder(true).SetBorderColor(tcell.NewRGBColor(0, 105, 75))
+	// The title lives in the centre of the welcome page.
 	u.welcomeCard = card
 	u.welcomeOuter = tview.NewFlex().SetDirection(tview.FlexColumn)
 	u.welcomeOuter.SetBackgroundColor(darker)
@@ -69,8 +61,7 @@ func (u *UI) setupAuthentication() {
 		AddItem(nil, 0, 1, false)
 	welcome := tview.NewFlex().SetDirection(tview.FlexRow)
 	welcome.SetBackgroundColor(darker)
-	welcome.AddItem(brand, 3, 0, false).
-		AddItem(nil, 0, 1, false).
+	welcome.AddItem(nil, 0, 1, false).
 		AddItem(u.welcomeOuter, 24, 0, true).
 		AddItem(nil, 0, 1, false)
 	u.welcomePage = welcome
@@ -80,8 +71,9 @@ func (u *UI) setupAuthentication() {
 	// All buttons are actual TView controls and work with pointer and keyboard.
 	u.agreementText = tview.NewTextView().SetDynamicColors(true).SetScrollable(true)
 	u.agreementText.SetBackgroundColor(slate)
-	u.agreementText.SetText("[#25D366::b]BEFORE YOU CONNECT[-]   [#8696A0]STEP 01 / 02[-]\n\n" +
-		"[#E9EDEF::b]A quick note about WhatsCLI[-]\n\n" +
+	u.agreementText.SetText("[#8696A0]BEFORE YOU CONNECT[-]   [#00E99A]STEP 01 / 02[-]\n" +
+		"[#E9EDEF::b]Disclaimer & consent[-]\n" +
+		"[#8696A0]A few important things to know before you continue.[-]\n\n" +
 		"[#CAD5D7]01  Independent and unofficial.[-]\n" +
 		"    WhatsCLI is not created, sponsored, certified or supported by\n" +
 		"    WhatsApp or Meta. The WhatsApp name belongs to its owners.\n\n" +
@@ -135,7 +127,7 @@ func (u *UI) setupAuthentication() {
 		AddItem(buttons, 3, 0, true)
 	agreementCard.SetBorder(true).SetBorderColor(tcell.NewRGBColor(48, 69, 71))
 	agreementCard.SetBackgroundColor(slate)
-	agreementCard.SetTitle("  WhatsCLI · Disclaimer & consent  ").SetTitleColor(green)
+	// Heading is inside the page rather than duplicated in the border.
 	u.agreementCard = agreementCard
 	u.agreementOuter = tview.NewFlex().SetDirection(tview.FlexColumn)
 	u.agreementOuter.SetBackgroundColor(darker)
@@ -144,8 +136,7 @@ func (u *UI) setupAuthentication() {
 		AddItem(nil, 0, 1, false)
 	agreementPage := tview.NewFlex().SetDirection(tview.FlexRow)
 	agreementPage.SetBackgroundColor(darker)
-	agreementPage.AddItem(brand, 3, 0, false).
-		AddItem(nil, 0, 1, false).
+	agreementPage.AddItem(nil, 0, 1, false).
 		AddItem(u.agreementOuter, 30, 0, true).
 		AddItem(nil, 0, 1, false)
 	u.agreementPage = agreementPage
@@ -195,8 +186,7 @@ func (u *UI) setupAuthentication() {
 		AddItem(nil, 0, 1, false)
 	login := tview.NewFlex().SetDirection(tview.FlexRow)
 	login.SetBackgroundColor(darker)
-	login.AddItem(brand, 3, 0, false).
-		AddItem(nil, 0, 1, false).
+	login.AddItem(nil, 0, 1, false).
 		AddItem(u.loginOuter, 37, 0, true).
 		AddItem(nil, 0, 1, false)
 	u.loginPage = login
@@ -236,7 +226,7 @@ func (u *UI) authLayout(width, height int) {
 		}
 		return desired
 	}
-	u.welcomePage.ResizeItem(u.welcomeOuter, heightFor(24), 0)
+	u.welcomePage.ResizeItem(u.welcomeOuter, heightFor(26), 0)
 	u.agreementPage.ResizeItem(u.agreementOuter, heightFor(30), 0)
 	u.loginPage.ResizeItem(u.loginOuter, heightFor(37), 0)
 	u.loginOuter.ResizeItem(u.loginCard, max(106, width-4), 0)
@@ -262,27 +252,39 @@ func (u *UI) authLayout(width, height int) {
 	}
 }
 
-// startWelcomeAnimation updates only a tiny decorative line. All mutations run
-// in the UI event loop; the ticker exits with the run context.
+// welcomeLogoFrame animates the glow and matching accent dots on both
+// sides of WhatsCLI's chat/terminal icon. It works in ordinary SSH terminals.
+func welcomeLogoFrame(step int) string {
+	shades := [...]string{"#08784F", "#0BAC71", "#0CDD83", "#20F2A2", "#0CDD83", "#0BAC71"}
+	rail := [...]string{"●───────────", "──●─────────", "────●───────", "──────●─────", "────────●───", "──────────●─"}
+	accent := shades[step%len(shades)]
+	line := rail[step%len(rail)]
+	return fmt.Sprintf("\n[#134338]%s[-]    [%s]╭───────╮[-]    [#134338]%s[-]\n"+
+		"[#134338]%s[-]    [%s]│  ❯_   │[-]    [#134338]%s[-]\n"+
+		"[#134338]%s[-]    [%s]╰──╮    │[-]    [#134338]%s[-]\n"+
+		"                 [%s]╰────╯[-]",line,accent,line,line,accent,line,line,accent,line,accent)
+}
+
+// The decoration never blocks input. Ticker cancellation and queueing all
+// UI mutations on the app loop avoid races when exiting or resizing.
 func (u *UI) startWelcomeAnimation(ctx context.Context) {
 	if u.welcomeGlow == nil || os.Getenv("WHATSCLI_REDUCED_MOTION") == "1" {
 		return
 	}
 	go func() {
-		ticker := time.NewTicker(190 * time.Millisecond)
+		ticker := time.NewTicker(240 * time.Millisecond)
 		defer ticker.Stop()
-		frames := []string{"◆  ·───  ●  ───·  ◆", "◆  ─·──  ●  ──·─  ◆", "◆  ──·─  ●  ─·──  ◆", "◆  ───·  ●  ·───  ◆"}
 		step := 0
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				step = (step + 1) % len(frames)
-				frame := frames[step]
+				step++
+				frame := welcomeLogoFrame(step)
 				u.app.QueueUpdateDraw(func() {
 					if u.authScreen == "welcome" {
-						u.welcomeGlow.SetText("\n[#25D366]" + frame + "[-]")
+						u.welcomeGlow.SetText(frame)
 					}
 				})
 			}
