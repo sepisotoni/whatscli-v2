@@ -2,8 +2,8 @@
 
 **Repository:** https://github.com/sepisotoni/WhatsCLI  
 **Last planning review:** 2026-10-30  
-**Stage:** v0.2 development → v0.3  
-**Estimated overall completion: 46%** (weighted scope estimate; not a verified measure of functionality).  
+**Stage:** v0.2.1-beta.1 published (experimental) → v0.3  
+**Estimated overall completion: 47%** (weighted scope estimate; not a verified measure of functionality).  
 **Evidence:** The Go CI has passed, including race tests, build, lint, static analysis and security scans. Real WhatsApp account + SSH acceptance cases [A01–A14](docs/ACCEPTANCE.md) have **not** been completed.
 
 ## How this plan works
@@ -17,7 +17,7 @@
 
 | Workstream | Total weight | Earned | Evidence / biggest gap |
 |---|---:|---:|---|
-| Foundation & project tooling | 8 | 7 | Go app, CI, GitHub releases configured; no production tag |
+| Foundation & project tooling | 8 | 8 | Go app, CI, versioned prerelease assets, checked install/uninstall and release process |
 | SQLite archive & sync reliability | 14 | 10 | Edit versions, tombstones, search, backup; migrations, recovery and full history proof outstanding |
 | Auth, connectivity & messaging | 14 | 4 | WhatsMeow implementation compiles; account-level verification missing |
 | Terminal UI, SSH & accessibility | 14 | 7 | Tview UI, commands, mouse, QR; real PTY and responsive acceptance missing |
@@ -26,7 +26,7 @@
 | Polls, statuses & advanced features | 10 | 2 | Poll creation source; voting, results and statuses missing |
 | Security, privacy & operations | 10 | 6 | Private paths, basic safety, backup and source security; encrypted backup, restore and audits missing |
 | Tests, diagnostics & release quality | 10 | 6 | CI, unit/race tests and acceptance plan; doctor added in this milestone; real integration and tagged release missing |
-| **Total** | **100** | **46** | **Early development, not production-ready** |
+| **Total** | **100** | **47** | **Early development, not production-ready** |
 
 ## Milestone A — reliable first-run beta (P0)
 
@@ -42,6 +42,7 @@
 - [ ] **UI-02**: Real SSH/tmux/PTY run across minimum dimensions, mouse, QR, resizing and Ctrl+C (**A12, A13**). [Spec §4](docs/IMPLEMENTATION_SPEC.md#4-terminal-experience-and-ssh)
 - [ ] **AUTH-02**: Verify logout revokes the correct session while preserving history (**A14**). [Spec §3](docs/IMPLEMENTATION_SPEC.md#3-whatsapp-transport-and-account-lifecycle)
 - [x] **DATA-03**: Version schema migrations and test upgrades from both an empty database and previous schema. [Spec §2](docs/IMPLEMENTATION_SPEC.md#2-sqlite-archive-and-data-integrity)
+- [x] **REL-00**: Publish versioned prerelease binaries, SHA256SUMS, a verified curl installer, data-preserving uninstaller and embedded `--version`. [Spec §11](docs/IMPLEMENTATION_SPEC.md#11-builds-packaging-and-release)
 - [ ] **REL-01**: Commit reproducible dependency sums, create first tested prerelease, and verify binary artifacts on Linux/macOS/Windows. [Spec §11](docs/IMPLEMENTATION_SPEC.md#11-builds-packaging-and-release)
 
 ## Milestone B — useful everyday terminal messaging (P1)
@@ -78,4 +79,4 @@
 
 **Done:** Source merged, relevant Go tests passing, CI green, docs updated, and acceptance case successfully run when the task involves the actual WhatsApp account or SSH rendering. **Blocked (external):** A01–A14 need a consenting test WhatsApp account, an interactive SSH terminal, and a linked device. No amount of unit or GitHub Actions success can substitute for those tests.
 
-**Progress note:** The 46% estimate adds two points for schema-safe archive upgrades and one for local aliases. CONTACT-01 and AUTH-03 remain open because network contact-name sync and guaranteed send retry are not implemented. No live WhatsApp account acceptance was performed.\n\n**Scope controls:** Do not claim that a cached archive can recover messages never observed, bypass view-once/ephemeral restrictions, or guarantee zero data loss. This is an unofficial third-party WhatsApp client; follow the platform's terms.
+**Progress note:** The 47% estimate includes the first fully published, checksummed prerelease and live installer/uninstaller CI. REL-01 remains open for dependency hash pinning and native platform acceptance. CONTACT-01 and AUTH-03 remain open because network contact-name sync and guaranteed send retry are not implemented. No live WhatsApp account acceptance was performed.\n\n**Scope controls:** Do not claim that a cached archive can recover messages never observed, bypass view-once/ephemeral restrictions, or guarantee zero data loss. This is an unofficial third-party WhatsApp client; follow the platform's terms.
