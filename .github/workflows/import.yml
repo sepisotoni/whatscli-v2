@@ -34,6 +34,9 @@ jobs:
               pos = end + 1
               if path.startswith("/") or ".." in Path(path).parts:
                   raise ValueError("unsafe path: " + path)
+              if path.startswith(".github/workflows/"):
+                  pos += size
+                  continue
               dst = Path(path)
               dst.parent.mkdir(parents=True, exist_ok=True)
               dst.write_bytes(raw[pos:pos+size])
@@ -41,7 +44,7 @@ jobs:
               count += 1
           print("Extracted", count, "source files")
           PY
-          rm -f .bootstrap/source.b64 .github/workflows/import.yml
+          rm -f .bootstrap/source.b64
           rmdir .bootstrap 2>/dev/null || true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
