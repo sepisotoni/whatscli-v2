@@ -1,0 +1,41 @@
+name: Published installer smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'releases/current.txt'
+      - 'scripts/install.sh'
+      - 'scripts/uninstall.sh'
+      - '.github/workflows/install-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: install current release / verify / uninstall
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install actual published release with checksum verification
+        env:
+          WHATSCLI_INSTALL_DIR: ${{ runner.temp }}/whatscli-install-smoke
+          WHATSHELL_HOME: ${{ runner.temp }}/whatscli-private-data
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/install.sh
+          test -x "$WHATSCLI_INSTALL_DIR/whatscli"
+          version="$(tr -d '\r\n' < releases/current.txt)"
+          "$WHATSCLI_INSTALL_DIR/whatscli" --version | grep -F "WhatsCLI $version"
+          "$WHATSCLI_INSTALL_DIR/whatscli" --doctor
+          test ! -f "$WHATSHELL_HOME/session.sqlite3"
+          test ! -f "$WHATSHELL_HOME/history.sqlite3"
+          mkdir -p "$WHATSHELL_HOME"
+          printf '%s\n' 'do-not-delete' > "$WHATSHELL_HOME/keep.txt"
+          bash scripts/uninstall.sh
+          test ! -e "$WHATSCLI_INSTALL_DIR/whatscli"
+          grep -F 'do-not-delete' "$WHATSHELL_HOME/keep.txt"
