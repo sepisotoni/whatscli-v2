@@ -1,0 +1,62 @@
+name: Import WhatsCLI v0.2
+on:
+  push:
+    paths:
+      - '.bootstrap/source.b64'
+      - '.github/workflows/import.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Extract source files
+        shell: bash
+        run: |
+          if [ ! -f .bootstrap/source.b64 ]; then
+            echo "Waiting for source archive"
+            exit 0
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, lzma
+          raw = lzma.decompress(base64.b64decode(Path(".bootstrap/source.b64").read_text().strip()))
+          pos = 0
+          count = 0
+          while pos < len(raw):
+              end = raw.index(b"\0", pos)
+              path = raw[pos:end].decode()
+              pos = end + 1
+              end = raw.index(b"\0", pos)
+              size = int(raw[pos:end])
+              pos = end + 1
+              if path.startswith("/") or ".." in Path(path).parts:
+                  raise ValueError("unsafe path: " + path)
+              dst = Path(path)
+              dst.parent.mkdir(parents=True, exist_ok=True)
+              dst.write_bytes(raw[pos:pos+size])
+              pos += size
+              count += 1
+          print("Extracted", count, "source files")
+          PY
+          rm -f .bootstrap/source.b64 .github/workflows/import.yml
+          rmdir .bootstrap 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: import WhatsCLI v0.2 Go application"
+          git push
+      - uses: actions/setup-go@v6
+        if: hashFiles('go.mod') != ''
+        with:
+          go-version: '1.27.3'
+          cache: false
+      - name: Resolve and test source
+        if: hashFiles('go.mod') != ''
+        run: |
+          go mod tidy
+          go vet ./...
+          go test -race ./...
+          CGO_ENABLED=0 go build ./cmd/whatshell
