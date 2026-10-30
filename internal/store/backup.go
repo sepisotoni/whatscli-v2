@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -48,7 +49,7 @@ func (d *DB) Backup(ctx context.Context, dir string) (string, error) {
 	syncErr := synced.Sync()
 	closeErr := synced.Close()
 	if syncErr != nil || closeErr != nil {
-		return "", fmt.Errorf("sync backup: %v %v", syncErr, closeErr)
+		return "", fmt.Errorf("sync backup: %w", errors.Join(syncErr, closeErr))
 	}
 	return path, nil
 }
