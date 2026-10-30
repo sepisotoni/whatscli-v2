@@ -34,6 +34,8 @@ jobs:
         env:
           CGO_ENABLED: '0'
         run: go build -trimpath -o /tmp/whatshell ./cmd/whatshell
+      - name: Simulated terminal demo and resize smoke test
+        run: python3 scripts/pty_smoke.py /tmp/whatshell
       - name: Offline diagnostics smoke test
         env:
           WHATSHELL_HOME: ${{ runner.temp }}/whatscli-doctor-smoke

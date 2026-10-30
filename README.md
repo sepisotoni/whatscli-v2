@@ -66,6 +66,15 @@ CGO_ENABLED=0 go build -trimpath -o bin/whatshell ./cmd/whatshell
 
 > **Go module note:** The source module currently retains the original identifier `github.com/sepisotoni/whatshell-go`; the GitHub repository is `sepisotoni/WhatsCLI`. Building from a clone works because internal imports use the existing module name. The naming will be standardized in a future cleanup.
 
+### Preview the terminal UI without linking WhatsApp
+
+```bash
+go run ./cmd/whatshell --demo
+# or: ./bin/whatshell --demo
+```
+
+Demo mode uses **fictional conversations** in a disposable SQLite archive. It does not connect to WhatsApp, create a linked-device session, send messages, or touch your normal history. You can navigate, search cached fixtures, and try `/alias NAME`. Quit using `/quit`. Outgoing WhatsApp operations are deliberately disabled in the demo. CI exercises the demo inside a Linux pseudo-terminal, including narrow-window resize.
+
 ### Check local setup without connecting to WhatsApp
 
 ```bash

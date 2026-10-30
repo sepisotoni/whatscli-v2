@@ -40,6 +40,14 @@ Record your terminal emulator, `TERM`, dimensions, OS, and the commit SHA. **Do 
 | A13 | Click chat, scroll, Tab through panes; type `/d` then Tab | No unexpected focus loss; `/download` completion | Not run |
 | A14 | Logout, verify WhatsApp Linked devices, restart | Credentials removed, chat archive preserved | Not run |
 
+## Automated terminal preview (not live acceptance)
+
+```bash
+go run ./cmd/whatshell --demo
+```
+
+The demo provides fictional conversations and no WhatsApp network connection. CI runs a Linux PTY smoke test against the compiled binary, exercising startup, 100×32 → 75×24 → 40×20 resize and clean exit, while confirming no real user session directory was created. **This does not complete A01–A14 or verify real SSH transport.**
+
 ## Automated checks
 
 ```bash
