@@ -66,11 +66,12 @@ def main(binary: str) -> None:
                 fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
                 os.killpg(proc.pid, signal.SIGWINCH)
                 # Drain redraw traffic so the app cannot block on its own output.
-                select.select([master], [], [], 0.12)
-                try:
-                    os.read(master, 65536)
-                except OSError:
-                    pass
+                ready, _, _ = select.select([master], [], [], 0.12)
+                if ready:
+                    try:
+                        os.read(master, 65536)
+                    except OSError:
+                        pass
             os.write(master, b"/quit\r")
             code = pump_until_exit(5)
             if code is None:
