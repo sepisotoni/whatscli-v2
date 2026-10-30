@@ -57,7 +57,7 @@ def main(binary: str) -> None:
             until(b"Independent and unofficial")
             # Trying Continue without acknowledgement must not open QR login.
             os.write(master, b"\t\r")
-            until(b"Please read and tick")
+            until(b"acknowledgement")  # Styled warning includes ANSI colour codes.
             os.write(master, b" ")  # checkbox (focus returned by blocked Continue)
             os.write(master, b"\t\r")  # Agree & continue
             until(b"Log in to WhatsApp")
