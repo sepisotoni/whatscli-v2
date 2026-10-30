@@ -293,7 +293,7 @@ func welcomeLogoFrame(step int) string {
 	return fmt.Sprintf("\n[#134338]%s[-]    [%s]╭───────╮[-]    [#134338]%s[-]\n"+
 		"[#134338]%s[-]    [%s]│  ❯_   │[-]    [#134338]%s[-]\n"+
 		"[#134338]%s[-]    [%s]╰──╮    │[-]    [#134338]%s[-]\n"+
-		"                 [%s]╰────╯[-]",line, accent, line, line, accent, line, line, accent, line, accent)
+		"                 [%s]╰────╯[-]", line, accent, line, line, accent, line, line, accent, line, accent)
 }
 
 // The decoration never blocks input. Ticker cancellation and queueing all
