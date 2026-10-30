@@ -12,7 +12,7 @@
 ![SSH](https://img.shields.io/badge/SSH-ready-25D366)
 ![Status](https://img.shields.io/badge/status-v0.2%20development-42545e)
 
-[Quick start](#-quick-start) · [Preview](#-terminal-preview) · [Commands](#-keyboard--commands) · [Architecture](#-architecture) · [Roadmap](#-what-works-today)
+[Task tracker](TASKS.md) · [Detailed spec](docs/IMPLEMENTATION_SPEC.md) · [Quick start](#-quick-start) · [Preview](#-terminal-preview) · [Commands](#-keyboard--commands) · [Architecture](#-architecture) · [Roadmap](#-what-works-today)
 
 </div>
 
@@ -65,6 +65,16 @@ CGO_ENABLED=0 go build -trimpath -o bin/whatshell ./cmd/whatshell
 ```
 
 > **Go module note:** The source module currently retains the original identifier `github.com/sepisotoni/whatshell-go`; the GitHub repository is `sepisotoni/WhatsCLI`. Building from a clone works because internal imports use the existing module name. The naming will be standardized in a future cleanup.
+
+### Check local setup without connecting to WhatsApp
+
+```bash
+go run ./cmd/whatshell --doctor
+# Or with a compiled binary:
+./bin/whatshell --doctor
+```
+
+This offline diagnostic checks private data directories, existing session/history file permissions, and a **read-only SQLite integrity check** if a local history archive exists. It does **not** create session/history databases, pair devices, or test the WhatsApp network. The configuration resolver may create the normal private uploads/downloads directories.
 
 ### Run over SSH
 
@@ -135,6 +145,8 @@ The application attempts to restrict its data directories to `0700` and database
 **Deleted and edited messages:** WhatsCLI retains *already observed* message bodies when a revocation event arrives, and stores previous bodies when it receives edit events. It cannot reconstruct messages it never received or bypass view-once/disappearing-message limitations. Backups can preserve plaintext conversation history; consider the privacy implications for everyone in those chats.
 
 `/logout` removes local session data but keeps cached history. A remote unlink failure must be verified in WhatsApp's Linked devices screen. Local file deletion is **not** guaranteed forensic erasure on SSDs.
+
+**Progress and next steps:** [live weighted task tracker](TASKS.md) · [engineering acceptance criteria](docs/IMPLEMENTATION_SPEC.md) · [real SSH test plan](docs/ACCEPTANCE.md).
 
 ## 🧩 Architecture
 

@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/sepisotoni/whatshell-go/internal/config"
+	"github.com/sepisotoni/whatshell-go/internal/doctor"
 	"github.com/sepisotoni/whatshell-go/internal/store"
 	"github.com/sepisotoni/whatshell-go/internal/ui"
 	"github.com/sepisotoni/whatshell-go/internal/wa"
@@ -24,12 +25,16 @@ func main() {
 }
 
 func run() error {
+	doctorMode := flag.Bool("doctor", false, "check local storage and SQLite integrity without connecting to WhatsApp")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	paths, err := config.Resolve()
 	if err != nil {
 		return err
+	}
+	if *doctorMode {
+		return doctor.Run(ctx, paths, os.Stdout)
 	}
 	for _, path := range []string{paths.History, paths.Session} {
 		if err := config.ProtectFile(path); err != nil {
