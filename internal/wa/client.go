@@ -123,7 +123,7 @@ func (c *Client) onEvent(raw any) {
 		// WhatsMeow obtains the history blob and exposes individual web messages.
 		count := 0
 		for _, conv := range e.Data.GetConversations() {
-			chat, err := types.ParseJID(conv.GetId())
+			chat, err := types.ParseJID(conv.GetID())
 			if err != nil {
 				continue
 			}
