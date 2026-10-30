@@ -214,14 +214,14 @@ func (u *UI) authKey(event *tcell.EventKey) *tcell.EventKey {
 		u.app.Stop()
 		return nil
 	case tcell.KeyTAB, tcell.KeyBacktab:
-		if u.authScreen == "welcome" {
+		switch u.authScreen {
+		case "welcome":
 			if u.app.GetFocus() == u.welcomeButton {
 				u.app.SetFocus(u.welcomeQuit)
 			} else {
 				u.app.SetFocus(u.welcomeButton)
 			}
-			// The welcome page's other action is Exit; keep Tab navigation in the welcome card.
-		} else if u.authScreen == "login" {
+		case "login":
 			if u.app.GetFocus() == u.loginExpand {
 				u.app.SetFocus(u.loginBack)
 			} else {

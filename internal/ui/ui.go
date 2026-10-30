@@ -57,26 +57,26 @@ type UI struct {
 	width       int
 	height      int
 	// First-run onboarding is intentionally distinct from the chat workspace.
-	authScreen string
-	runContext context.Context
-	pairingStarted bool
-	welcomeButton *tview.Button
-	welcomeQuit *tview.Button
-	welcomeCard *tview.Flex
-	welcomeOuter *tview.Flex
-	loginCard *tview.Flex
-	loginOuter *tview.Flex
-	loginColumns *tview.Flex
+	authScreen        string
+	runContext        context.Context
+	pairingStarted    bool
+	welcomeButton     *tview.Button
+	welcomeQuit       *tview.Button
+	welcomeCard       *tview.Flex
+	welcomeOuter      *tview.Flex
+	loginCard         *tview.Flex
+	loginOuter        *tview.Flex
+	loginColumns      *tview.Flex
 	loginInstructions *tview.TextView
-	loginSpacer tview.Primitive
-	loginQR *tview.TextView
-	loginState *tview.TextView
-	loginBack *tview.Button
-	loginExpand *tview.Button
-	fullQR *tview.TextView
-	qrText string
-	qrWidth int
-	qrHeight int
+	loginSpacer       tview.Primitive
+	loginQR           *tview.TextView
+	loginState        *tview.TextView
+	loginBack         *tview.Button
+	loginExpand       *tview.Button
+	fullQR            *tview.TextView
+	qrText            string
+	qrWidth           int
+	qrHeight          int
 }
 
 func New(archive *store.DB, client *wa.Client, paths config.Paths) *UI {
