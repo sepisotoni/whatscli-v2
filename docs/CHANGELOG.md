@@ -1,6 +1,14 @@
 # Change log
 
-## Unreleased — v0.2 development (2026-10-30)
+## v0.2.1-beta.1 — Experimental prerelease (2026-10-30)
+
+- Tagged release binaries for Linux/macOS/Windows with embedded `--version` and exact commit.
+- User-local verified `curl` installer, safe uninstall retaining chats/credentials, checksum verification and installer tests.
+- GitHub release workflow with checksums and a separate opt-in default install channel.
+- SQLite schema v2 upgrades, local aliases, offline `--doctor`, isolated `--demo` and PTY resize tests.
+- **Not yet verified:** actual WhatsApp QR/device linking, live messaging or an authorized SSH session. Not a stable release.
+
+## Earlier v0.2 development (2026-10-30)
 
 - **WhatsApp:** ingest Multi-Device history sync events, archive incoming media metadata for later downloads, and persist delivered/read receipts in a separate monotonic table.
 - **Media:** added bounded (16 MiB) SFTP-root upload of JPEG/PNG images and generic documents, plus on-demand, collision-resistant attachment downloads for supported message types.

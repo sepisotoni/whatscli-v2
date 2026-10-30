@@ -1,10 +1,27 @@
-name: Release binaries
+name: Versioned release
+
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'releases/REQUEST'
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish, e.g. v0.2.1-beta.1'
+        required: true
+        type: string
+
 permissions:
   contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -13,25 +30,78 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: '1.27.3'
-          cache: true
-      - name: Verify dependencies and tests
+          cache: false
+      - name: Determine and validate release version
+        id: meta
+        env:
+          DISPATCH_VERSION: ${{ inputs.version }}
+        shell: bash
         run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tag="${GITHUB_REF#refs/tags/}"
+          elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            tag="$DISPATCH_VERSION"
+          else
+            tag="$(tr -d '\r\n' < releases/REQUEST)"
+          fi
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$ ]]; then
+            echo "Invalid semantic version tag: $tag" >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" != refs/tags/* ]]; then
+            # Releasing a tag that already exists could inadvertently publish
+            # another revision under the same version. Refuse that operation.
+            if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+              echo "Release tag already exists: $tag" >&2
+              exit 1
+            fi
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if [[ "$tag" == *-* ]]; then
+            echo 'prerelease=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'prerelease=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify sources and packaging scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/install.sh scripts/uninstall.sh scripts/test_install.sh
+          bash scripts/test_install.sh
           go mod tidy
           go mod verify
-          go test ./...
-      - name: Cross-compile without CGO
+          go test -race -count=1 ./...
+          go vet ./...
+      - name: Build versioned binaries
+        shell: bash
         env:
           CGO_ENABLED: '0'
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
         run: |
+          set -euo pipefail
           mkdir -p dist
           for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
             os="${target%/*}"; arch="${target#*/}"
-            suffix=""; if [[ "$os" == windows ]]; then suffix=".exe"; fi
-            GOOS="$os" GOARCH="$arch" go build -trimpath -ldflags='-s -w' -o "dist/whatshell-${os}-${arch}${suffix}" ./cmd/whatshell
+            suffix=''; if [[ "$os" == windows ]]; then suffix='.exe'; fi
+            GOOS="$os" GOARCH="$arch" go build -trimpath \
+              -ldflags="-s -w -X main.version=${RELEASE_TAG} -X main.commit=${GITHUB_SHA}" \
+              -o "dist/whatscli-${os}-${arch}${suffix}" ./cmd/whatshell
           done
-          cd dist && sha256sum * > SHA256SUMS
-      - name: Publish tagged release
+          chmod +x dist/whatscli-linux-*
+          dist/whatscli-linux-amd64 --version | grep -F "WhatsCLI ${RELEASE_TAG}"
+          (cd dist && sha256sum whatscli-* > SHA256SUMS)
+      - name: Publish assets and version tag
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          prerelease: ${{ steps.meta.outputs.prerelease == 'true' }}
           generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: dist/*
+          body: |
+            **WhatsCLI experimental release** — automated tests and checks passed before packaging.
+            Real WhatsApp QR login, messaging, and media transfer still require manual
+            acceptance testing on an authorized account. Use a test account first.
+            Assets include Linux/macOS/Windows builds and SHA256SUMS for verification.

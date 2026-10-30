@@ -1,4 +1,4 @@
-.PHONY: tidy build run test vet lint check
+.PHONY: tidy build run test vet lint check install-test version
 
 tidy:
 	go mod tidy
@@ -14,3 +14,8 @@ lint:
 	golangci-lint run ./...
 check:
 	bash scripts/check.sh
+
+install-test:
+	bash scripts/test_install.sh
+version:
+	go run ./cmd/whatshell --version

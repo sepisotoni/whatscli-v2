@@ -26,6 +26,10 @@ jobs:
         run: go mod tidy && go mod verify
       - name: Custom vet & style checks
         run: bash scripts/check.sh
+      - name: Installer and uninstaller regression tests
+        run: |
+          bash -n scripts/install.sh scripts/uninstall.sh scripts/test_install.sh
+          bash scripts/test_install.sh
       - name: Tests with race detection
         run: go test -race -count=1 ./...
       - name: Coverage
@@ -34,6 +38,8 @@ jobs:
         env:
           CGO_ENABLED: '0'
         run: go build -trimpath -o /tmp/whatshell ./cmd/whatshell
+      - name: CLI version smoke test
+        run: /tmp/whatshell --version | grep -F "WhatsCLI dev"
       - name: Simulated terminal demo and resize smoke test
         run: python3 scripts/pty_smoke.py /tmp/whatshell
       - name: Offline diagnostics smoke test

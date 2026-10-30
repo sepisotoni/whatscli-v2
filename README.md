@@ -10,7 +10,7 @@
 ![Go](https://img.shields.io/badge/Go-1.27.3-00ADD8?logo=go&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-local%20first-128C7E?logo=sqlite&logoColor=white)
 ![SSH](https://img.shields.io/badge/SSH-ready-25D366)
-![Status](https://img.shields.io/badge/status-v0.2%20development-42545e)
+![Status](https://img.shields.io/badge/status-experimental%20prerelease-42545e)
 
 [Task tracker](TASKS.md) · [Detailed spec](docs/IMPLEMENTATION_SPEC.md) · [Quick start](#-quick-start) · [Preview](#-terminal-preview) · [Commands](#-keyboard--commands) · [Architecture](#-architecture) · [Roadmap](#-what-works-today)
 
@@ -42,6 +42,25 @@
 - **Go throughout:** `tview` / `tcell` interface, WhatsMeow protocol integration, and a CGO-free SQLite driver for normal builds.
 - **Offline-friendly:** Read messages already cached locally even when WhatsApp is disconnected.
 - **Transparent development:** Automated formatting, race tests, static analysis, vulnerability scanning and release builds.
+
+## 📦 One-command install (Ubuntu/Linux and macOS)
+
+Prebuilt binaries install into `~/.local/bin/whatscli` without Go or sudo. SHA-256 checksums are verified before installation.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/sepisotoni/WhatsCLI/main/scripts/install.sh | bash
+whatscli --version
+whatscli --doctor
+whatscli --demo
+```
+
+**Uninstall (keeps sessions, chat archives and backups):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/sepisotoni/WhatsCLI/main/scripts/uninstall.sh | bash
+```
+
+For a pinned version, custom directory or PATH instructions read the [install guide](docs/INSTALL.md). [Releases](https://github.com/sepisotoni/WhatsCLI/releases) · [Versioning](docs/RELEASING.md). **Experimental prereleases have not passed real WhatsApp account acceptance.**
 
 ## 🚀 Quick start
 
