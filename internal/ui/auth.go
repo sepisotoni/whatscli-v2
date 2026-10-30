@@ -1,7 +1,10 @@
 package ui
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -11,10 +14,12 @@ import (
 // The onboarding screen is a real terminal UI, not a QR image printed into a log.
 // The QR is only shown on a requested login flow, and the client never stores it.
 func (u *UI) setupAuthentication() {
-	u.welcomeButton = tview.NewButton("  Log in to WhatsApp  →  ")
+	// A distinct WhatsCLI identity: WhatsApp's logo belongs to Meta and is not
+	// used as a third-party application's logo or as an endorsement cue.
+	u.welcomeButton = tview.NewButton("  Get started  →  ")
 	u.welcomeButton.SetBackgroundColor(green)
 	u.welcomeButton.SetLabelColor(darker)
-	u.welcomeButton.SetSelectedFunc(func() { u.openLogin() })
+	u.welcomeButton.SetSelectedFunc(func() { u.showAgreement() })
 	u.welcomeQuit = tview.NewButton("  Exit  ")
 	u.welcomeQuit.SetBackgroundColor(slate)
 	u.welcomeQuit.SetLabelColor(tcell.ColorWhite)
@@ -22,43 +27,129 @@ func (u *UI) setupAuthentication() {
 
 	brand := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	brand.SetBackgroundColor(darker)
-	brand.SetText("\n[#25D366::b]◉  WhatsCLI[-]  [#8696A0] /  TERMINAL MESSENGER[-]")
+	brand.SetText("\n[#25D366::b]◆[-] [#E9EDEF::b]WhatsCLI[-]  [#8696A0] /  PRIVATE TERMINAL WORKSPACE[-]")
 
+	// A lightweight 5-frame pulse creates a living interface without blocking
+	// input or requiring a graphics-capable terminal.
+	u.welcomeGlow = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
+	u.welcomeGlow.SetBackgroundColor(slate)
+	u.welcomeGlow.SetText("\n[#25D366]◆  ────────  ◆  ────────  ◆[-]")
 	hero := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	hero.SetBackgroundColor(slate)
-	hero.SetText("\n\n[#25D366::b]◉[-]\n\n[white::b]Your conversations. Your terminal.[-]\n\n[#B5C3C8]Your chats in one beautifully simple workspace.\nSecurely link WhatsApp on your phone, then stay in control\nfrom your keyboard or mouse — even over SSH.[-]\n\n[#8696A0]No browser required  •  Local message archive  •  Offline access[-]")
-
+	hero.SetText("\n[#8696A0::b]A QUIETER WAY TO STAY CONNECTED[-]\n\n" +
+		"[#E9EDEF::b]Your conversations.\nYour terminal.[-]\n\n" +
+		"[#B5C3C8]A thoughtful keyboard-first space for your chats,\n" +
+		"available over SSH — without a browser or desktop. [-]\n\n" +
+		"[#25D366]●[-] [#CAD5D7]Connected through your phone[-]     " +
+		"[#25D366]●[-] [#CAD5D7]Local chat history[-]     " +
+		"[#25D366]●[-] [#CAD5D7]Keyboard + mouse[-]")
 	actions := tview.NewFlex().SetDirection(tview.FlexColumn)
 	actions.AddItem(nil, 0, 1, false).
-		AddItem(u.welcomeButton, 30, 0, true).
-		AddItem(nil, 2, 0, false).
-		AddItem(u.welcomeQuit, 12, 0, false).
+		AddItem(u.welcomeButton, 24, 0, true).
+		AddItem(nil, 3, 0, false).
+		AddItem(u.welcomeQuit, 11, 0, false).
 		AddItem(nil, 0, 1, false)
 	details := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	details.SetBackgroundColor(slate)
-	details.SetText("[#8696A0]NEW DEVICE?  Scan a QR code to link your account.\nDEMO MODE?  Run whatscli --demo to explore safely without signing in.[-]")
-
+	details.SetText("[#8696A0]INDEPENDENT PROJECT   ·   NOT AFFILIATED WITH WHATSAPP OR META[-]\n" +
+		"[#8696A0]Next: review the unofficial-client notice before linking a device.[-]")
 	card := tview.NewFlex().SetDirection(tview.FlexRow)
-	card.AddItem(hero, 0, 1, false).
+	card.AddItem(u.welcomeGlow, 4, 0, false).
+		AddItem(hero, 0, 1, false).
 		AddItem(actions, 3, 0, true).
-		AddItem(details, 3, 0, false)
+		AddItem(details, 4, 0, false)
 	card.SetBackgroundColor(slate)
-	card.SetBorder(true).SetBorderColor(tcell.NewRGBColor(50, 61, 65))
+	card.SetBorder(true).SetBorderColor(tcell.NewRGBColor(48, 69, 71))
 	card.SetTitle("  Welcome to WhatsCLI  ").SetTitleColor(green)
-
 	u.welcomeCard = card
 	u.welcomeOuter = tview.NewFlex().SetDirection(tview.FlexColumn)
 	u.welcomeOuter.SetBackgroundColor(darker)
 	u.welcomeOuter.AddItem(nil, 0, 1, false).
-		AddItem(card, 84, 0, true).
+		AddItem(card, 88, 0, true).
 		AddItem(nil, 0, 1, false)
 	welcome := tview.NewFlex().SetDirection(tview.FlexRow)
 	welcome.SetBackgroundColor(darker)
 	welcome.AddItem(brand, 3, 0, false).
 		AddItem(nil, 0, 1, false).
-		AddItem(u.welcomeOuter, 23, 0, true).
+		AddItem(u.welcomeOuter, 24, 0, true).
 		AddItem(nil, 0, 1, false)
+	u.welcomePage = welcome
 	u.pages.AddPage("welcome", welcome, true, false)
+
+	// Agreement is a separate page, not a tiny checkbox hidden beside the QR.
+	// All buttons are actual TView controls and work with pointer and keyboard.
+	u.agreementText = tview.NewTextView().SetDynamicColors(true).SetScrollable(true)
+	u.agreementText.SetBackgroundColor(slate)
+	u.agreementText.SetText("[#25D366::b]BEFORE YOU CONNECT[-]   [#8696A0]STEP 01 / 02[-]\n\n" +
+		"[#E9EDEF::b]A quick note about WhatsCLI[-]\n\n" +
+		"[#CAD5D7]01  Independent and unofficial.[-]\n" +
+		"    WhatsCLI is not created, sponsored, certified or supported by\n" +
+		"    WhatsApp or Meta. The WhatsApp name belongs to its owners.\n\n" +
+		"[#CAD5D7]02  Your account, your decision.[-]\n" +
+		"    Linking relies on an unofficial client and may stop working or\n" +
+		"    carry account restrictions. Respect WhatsApp's terms of service.\n\n" +
+		"[#CAD5D7]03  Your local data stays your responsibility.[-]\n" +
+		"    Device credentials and cached chat history are stored on this\n" +
+		"    computer. The archive is not encrypted by WhatsCLI; protect it.\n" +
+		"    Cached copies of edits/deletions may remain on your device.\n\n" +
+		"[#CAD5D7]04  Early software, with no guarantee.[-]\n" +
+		"    This preview is experimental. Back up your data and use a test\n" +
+		"    account first. You can stop here without connecting anything.\n\n" +
+		"[#8696A0]More: https://www.whatsapp.com/legal/terms-of-service[-]")
+	u.agreementCheck = tview.NewCheckbox().SetLabel(" I understand this is an unofficial app and accept the risks above")
+	u.agreementCheck.SetLabelColor(tcell.ColorWhite)
+	u.agreementCheck.SetChangedFunc(func(checked bool) {
+		if checked {
+			u.agreementNext.SetBackgroundColor(green)
+			u.agreementNext.SetLabelColor(darker)
+			u.agreementStatus.SetText("[#25D366]Ready to continue. Nothing is linked yet.[-]")
+		} else {
+			u.agreementNext.SetBackgroundColor(tcell.NewRGBColor(51, 65, 69))
+			u.agreementNext.SetLabelColor(tcell.ColorGray)
+			u.agreementStatus.SetText("[#8696A0]Check the box to enable Continue.[-]")
+		}
+	})
+	u.agreementNext = tview.NewButton("  Agree & continue  →  ")
+	u.agreementNext.SetBackgroundColor(tcell.NewRGBColor(51, 65, 69))
+	u.agreementNext.SetLabelColor(tcell.ColorGray)
+	u.agreementNext.SetSelectedFunc(func() { u.acceptAgreement() })
+	u.agreementBack = tview.NewButton("  ← Back  ")
+	u.agreementBack.SetBackgroundColor(slate)
+	u.agreementBack.SetLabelColor(tcell.ColorWhite)
+	u.agreementBack.SetSelectedFunc(func() { u.showWelcome() })
+	u.agreementStatus = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
+	u.agreementStatus.SetBackgroundColor(slate)
+	u.agreementStatus.SetText("[#8696A0]Check the box to enable Continue.[-]")
+	checkLine := tview.NewFlex().SetDirection(tview.FlexColumn)
+	checkLine.AddItem(nil, 2, 0, false).
+		AddItem(u.agreementCheck, 0, 1, true).
+		AddItem(nil, 2, 0, false)
+	buttons := tview.NewFlex().SetDirection(tview.FlexColumn)
+	buttons.AddItem(u.agreementBack, 15, 0, false).
+		AddItem(nil, 0, 1, false).
+		AddItem(u.agreementNext, 27, 0, true)
+	agreementCard := tview.NewFlex().SetDirection(tview.FlexRow)
+	agreementCard.AddItem(u.agreementText, 0, 1, false).
+		AddItem(checkLine, 2, 0, true).
+		AddItem(u.agreementStatus, 1, 0, false).
+		AddItem(buttons, 3, 0, true)
+	agreementCard.SetBorder(true).SetBorderColor(tcell.NewRGBColor(48, 69, 71))
+	agreementCard.SetBackgroundColor(slate)
+	agreementCard.SetTitle("  WhatsCLI · Disclaimer & consent  ").SetTitleColor(green)
+	u.agreementCard = agreementCard
+	u.agreementOuter = tview.NewFlex().SetDirection(tview.FlexColumn)
+	u.agreementOuter.SetBackgroundColor(darker)
+	u.agreementOuter.AddItem(nil, 0, 1, false).
+		AddItem(agreementCard, 88, 0, true).
+		AddItem(nil, 0, 1, false)
+	agreementPage := tview.NewFlex().SetDirection(tview.FlexRow)
+	agreementPage.SetBackgroundColor(darker)
+	agreementPage.AddItem(brand, 3, 0, false).
+		AddItem(nil, 0, 1, false).
+		AddItem(u.agreementOuter, 30, 0, true).
+		AddItem(nil, 0, 1, false)
+	u.agreementPage = agreementPage
+	u.pages.AddPage("agreement", agreementPage, true, false)
 
 	heading := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignLeft)
 	heading.SetBackgroundColor(slate)
@@ -108,6 +199,7 @@ func (u *UI) setupAuthentication() {
 		AddItem(nil, 0, 1, false).
 		AddItem(u.loginOuter, 37, 0, true).
 		AddItem(nil, 0, 1, false)
+	u.loginPage = login
 	u.pages.AddPage("login", login, true, false)
 
 	u.fullQR = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
@@ -120,7 +212,7 @@ func (u *UI) setupAuthentication() {
 }
 
 func (u *UI) authLayout(width, height int) {
-	if u.welcomeOuter == nil || u.loginOuter == nil {
+	if u.welcomeOuter == nil || u.loginOuter == nil || u.agreementOuter == nil {
 		return
 	}
 	max := func(n, limit int) int {
@@ -132,7 +224,21 @@ func (u *UI) authLayout(width, height int) {
 		}
 		return n
 	}
-	u.welcomeOuter.ResizeItem(u.welcomeCard, max(84, width-4), 0)
+	u.welcomeOuter.ResizeItem(u.welcomeCard, max(88, width-4), 0)
+	u.agreementOuter.ResizeItem(u.agreementCard, max(88, width-4), 0)
+	heightFor := func(desired int) int {
+		available := height - 5
+		if available < 8 {
+			return 8
+		}
+		if available < desired {
+			return available
+		}
+		return desired
+	}
+	u.welcomePage.ResizeItem(u.welcomeOuter, heightFor(24), 0)
+	u.agreementPage.ResizeItem(u.agreementOuter, heightFor(30), 0)
+	u.loginPage.ResizeItem(u.loginOuter, heightFor(37), 0)
 	u.loginOuter.ResizeItem(u.loginCard, max(106, width-4), 0)
 	// The QR needs its original module size to remain reliably scannable.
 	// Keep the instructions beside it on wider screens; on small screens use
@@ -156,6 +262,50 @@ func (u *UI) authLayout(width, height int) {
 	}
 }
 
+// startWelcomeAnimation updates only a tiny decorative line. All mutations run
+// in the UI event loop; the ticker exits with the run context.
+func (u *UI) startWelcomeAnimation(ctx context.Context) {
+	if u.welcomeGlow == nil || os.Getenv("WHATSCLI_REDUCED_MOTION") == "1" {
+		return
+	}
+	go func() {
+		ticker := time.NewTicker(190 * time.Millisecond)
+		defer ticker.Stop()
+		frames := []string{"◆  ·───  ●  ───·  ◆", "◆  ─·──  ●  ──·─  ◆", "◆  ──·─  ●  ─·──  ◆", "◆  ───·  ●  ·───  ◆"}
+		step := 0
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				step = (step + 1) % len(frames)
+				frame := frames[step]
+				u.app.QueueUpdateDraw(func() {
+					if u.authScreen == "welcome" {
+						u.welcomeGlow.SetText("\n[#25D366]" + frame + "[-]")
+					}
+				})
+			}
+		}
+	}()
+}
+
+func (u *UI) showAgreement() {
+	u.authScreen = "agreement"
+	u.pages.SwitchToPage("agreement")
+	u.app.SetFocus(u.agreementCheck)
+}
+
+func (u *UI) acceptAgreement() {
+	if !u.agreementCheck.IsChecked() {
+		u.agreementStatus.SetText("[yellow]Please read and tick the agreement before continuing.[-]")
+		u.app.SetFocus(u.agreementCheck)
+		return
+	}
+	u.agreed = true // Explicit action; checking the box alone is not consent.
+	u.openLogin()
+}
+
 func (u *UI) showWelcome() {
 	u.authScreen = "welcome"
 	u.pages.SwitchToPage("welcome")
@@ -163,6 +313,10 @@ func (u *UI) showWelcome() {
 }
 
 func (u *UI) openLogin() {
+	if !u.agreed {
+		u.showAgreement()
+		return
+	}
 	u.authScreen = "login"
 	u.pages.SwitchToPage("login")
 	u.app.SetFocus(u.loginExpand)
@@ -205,6 +359,8 @@ func (u *UI) authKey(event *tcell.EventKey) *tcell.EventKey {
 			u.pages.SwitchToPage("login")
 			u.app.SetFocus(u.loginExpand)
 		case "login":
+			u.showAgreement()
+		case "agreement":
 			u.showWelcome()
 		case "welcome":
 			u.app.Stop()
@@ -220,6 +376,27 @@ func (u *UI) authKey(event *tcell.EventKey) *tcell.EventKey {
 				u.app.SetFocus(u.welcomeQuit)
 			} else {
 				u.app.SetFocus(u.welcomeButton)
+			}
+		case "agreement":
+			focused := u.app.GetFocus()
+			if event.Key() == tcell.KeyBacktab {
+				switch focused {
+				case u.agreementBack:
+					u.app.SetFocus(u.agreementNext)
+				case u.agreementNext:
+					u.app.SetFocus(u.agreementCheck)
+				default:
+					u.app.SetFocus(u.agreementBack)
+				}
+			} else {
+				switch focused {
+				case u.agreementCheck:
+					u.app.SetFocus(u.agreementNext)
+				case u.agreementNext:
+					u.app.SetFocus(u.agreementBack)
+				default:
+					u.app.SetFocus(u.agreementCheck)
+				}
 			}
 		case "login":
 			if u.app.GetFocus() == u.loginExpand {

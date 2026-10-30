@@ -85,6 +85,15 @@ CGO_ENABLED=0 go build -trimpath -o bin/whatshell ./cmd/whatshell
 
 > **Go module note:** The source module currently retains the original identifier `github.com/sepisotoni/whatshell-go`; the GitHub repository is `sepisotoni/WhatsCLI`. Building from a clone works because internal imports use the existing module name. The naming will be standardized in a future cleanup.
 
+### First-run experience: animated welcome and agreement
+
+WhatsCLI now opens an animated dark landing page with a green **Get started** action, followed by a dedicated **unofficial-client disclosure**. No WhatsApp pairing begins until the user checks the acknowledgement and explicitly selects **Agree & continue**.
+
+- **Welcome → Agreement → QR pairing**: Esc returns; Tab/Shift+Tab move focus; Space toggles the checkbox; Enter or mouse click activates buttons.
+- The disclosure explains independent/unofficial status, possible service/account restrictions, and local storage of unencrypted WhatsApp session and cached messages.
+- Set `WHATSCLI_REDUCED_MOTION=1` to turn off the decorative welcome animation.
+- WhatsCLI uses its own identity instead of presenting Meta's WhatsApp logo as its own. The project has no affiliation with or endorsement by WhatsApp or Meta.
+
 ### New: first-run welcome and QR pairing
 
 On a **new/unpaired device**, `whatscli` now opens a dedicated WhatsCLI welcome screen. Select **Log in to WhatsApp** (Enter or mouse click) to open the pairing instructions and live QR. The QR stays on the login screen during pairing and refreshes when WhatsApp provides a new one; only a confirmed connection opens the chats. Previously linked devices skip onboarding.

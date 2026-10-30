@@ -77,6 +77,18 @@ type UI struct {
 	qrText            string
 	qrWidth           int
 	qrHeight          int
+	welcomeGlow      *tview.TextView
+	agreementText    *tview.TextView
+	agreementStatus  *tview.TextView
+	agreementCheck   *tview.Checkbox
+	agreementNext    *tview.Button
+	agreementBack    *tview.Button
+	agreementCard    *tview.Flex
+	agreementOuter   *tview.Flex
+	agreementPage    *tview.Flex
+	welcomePage      *tview.Flex
+	loginPage        *tview.Flex
+	agreed           bool
 }
 
 func New(archive *store.DB, client *wa.Client, paths config.Paths) *UI {
@@ -717,6 +729,7 @@ func (u *UI) handle(evt wa.Event) {
 
 func (u *UI) Run(ctx context.Context) error {
 	u.runContext = ctx
+	u.startWelcomeAnimation(ctx)
 	if u.client == nil {
 		u.notice("DEMO MODE — fictional local data only; WhatsApp not connected")
 		return u.app.Run()

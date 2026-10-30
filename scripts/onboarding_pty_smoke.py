@@ -53,7 +53,13 @@ def main(binary: str) -> None:
                 raise RuntimeError(f"missing UI text {needle!r} (exit={proc.poll()}, output={bytes(output[-800:])!r})")
 
             until(b"Welcome to WhatsCLI")
-            os.write(master, b"\r")  # focused Log in button
+            os.write(master, b"\r")  # Get started -> disclosure, not login.
+            until(b"Independent and unofficial")
+            # Trying Continue without acknowledgement must not open QR login.
+            os.write(master, b"\t\r")
+            until(b"Please read and tick")
+            os.write(master, b" ")  # checkbox (focus returned by blocked Continue)
+            os.write(master, b"\t\r")  # Agree & continue
             until(b"Log in to WhatsApp")
             # Change size while the login screen is visible; neither a QR token
             # nor a WhatsApp session should ever be generated in preview mode.

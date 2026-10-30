@@ -1,6 +1,13 @@
 # Change log
 
-## Unreleased — First-run onboarding and pairing UX (2026-10-30)
+## Unreleased — Animated welcome and consent (2026-10-30)
+
+- Added a terminal-native animated WhatsCLI welcome, separate disclaimer page, consent checkbox and explicit Agree & continue action before QR pairing.
+- Disclosure covers unofficial status, possible service/account restrictions, local plaintext history/session risks and no warranties.
+- Keyboard/mouse navigation, reduced-motion option, responsive panels, and agreement-gate Go/PTY regression tests.
+- WhatsApp's official branding is not used as WhatsCLI's app logo, in keeping with Meta's independent-client branding restrictions.
+
+## Earlier first-run onboarding and pairing UX (2026-10-30)
 
 - Added a full-screen welcome experience, a dedicated WhatsApp QR pairing screen, keyboard/mouse action controls and a QR-fullscreen fallback for small terminals.
 - Keep the QR visible across pairing status updates; open the chat workspace only on a confirmed Connected event.
