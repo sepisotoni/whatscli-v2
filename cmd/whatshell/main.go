@@ -33,6 +33,7 @@ func run() error {
 	versionMode := flag.Bool("version", false, "print the WhatsCLI binary version and exit")
 	doctorMode := flag.Bool("doctor", false, "check local storage and SQLite integrity without connecting to WhatsApp")
 	demoMode := flag.Bool("demo", false, "run an isolated UI demo with fictional messages (no WhatsApp connection)")
+	previewMode := flag.Bool("demo-onboarding", false, "preview first-run welcome and login without a WhatsApp connection")
 	flag.Parse()
 	if *versionMode {
 		fmt.Printf("WhatsCLI %s (%s; %s)\n", version, commit, runtime.Version())
@@ -40,8 +41,8 @@ func run() error {
 	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	if *demoMode {
-		return runDemo(ctx)
+	if *demoMode || *previewMode {
+		return runDemo(ctx, *previewMode)
 	}
 	paths, err := config.Resolve()
 	if err != nil {

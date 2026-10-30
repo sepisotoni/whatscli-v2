@@ -85,6 +85,22 @@ CGO_ENABLED=0 go build -trimpath -o bin/whatshell ./cmd/whatshell
 
 > **Go module note:** The source module currently retains the original identifier `github.com/sepisotoni/whatshell-go`; the GitHub repository is `sepisotoni/WhatsCLI`. Building from a clone works because internal imports use the existing module name. The naming will be standardized in a future cleanup.
 
+### New: first-run welcome and QR pairing
+
+On a **new/unpaired device**, `whatscli` now opens a dedicated WhatsCLI welcome screen. Select **Log in to WhatsApp** (Enter or mouse click) to open the pairing instructions and live QR. The QR stays on the login screen during pairing and refreshes when WhatsApp provides a new one; only a confirmed connection opens the chats. Previously linked devices skip onboarding.
+
+- **Keyboard:** Tab moves between actions; Enter activates; Esc goes back; Q opens full-screen QR; Ctrl+C exits.
+- **Mouse:** Click the green Log in button, Back or Full-screen QR.
+- **Small terminal:** Expand the terminal or press Q for an unscaled full-screen code. Do not screenshot/share a real QR: it is a temporary login token.
+- **Phone-number pairing:** Not available yet; the UI does not present a fake sign-in action.
+
+Try the real onboarding screens *without accessing WhatsApp or your session files*:
+
+```bash
+whatscli --demo-onboarding
+# from source: go run ./cmd/whatshell --demo-onboarding
+```
+
 ### Preview the terminal UI without linking WhatsApp
 
 ```bash

@@ -16,7 +16,7 @@ import (
 // runDemo has no WhatsMeow client, never reads the user's actual session, and
 // keeps fixtures in a private disposable directory. This mode can be used to
 // review UI layout over SSH without pairing a WhatsApp account.
-func runDemo(ctx context.Context) error {
+func runDemo(ctx context.Context, previewOnboarding bool) error {
 	root, err := os.MkdirTemp("", "whatscli-demo-")
 	if err != nil {
 		return fmt.Errorf("create demo directory: %w", err)
@@ -32,7 +32,11 @@ func runDemo(ctx context.Context) error {
 	if err := seedDemo(ctx, db); err != nil {
 		return err
 	}
-	if err := ui.New(db, nil, paths).Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
+	view := ui.New(db, nil, paths)
+	if previewOnboarding {
+		view.PreviewOnboarding()
+	}
+	if err := view.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		return err
 	}
 	return nil

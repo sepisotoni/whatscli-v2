@@ -1,5 +1,11 @@
 # Change log
 
+## Unreleased — First-run onboarding and pairing UX (2026-10-30)
+
+- Added a full-screen welcome experience, a dedicated WhatsApp QR pairing screen, keyboard/mouse action controls and a QR-fullscreen fallback for small terminals.
+- Keep the QR visible across pairing status updates; open the chat workspace only on a confirmed Connected event.
+- Added `--demo-onboarding` with fictional local data, unit tests and terminal pseudo-TTY smoke coverage.
+
 ## v0.2.1-beta.1 — Experimental prerelease (2026-10-30)
 
 - Tagged release binaries for Linux/macOS/Windows with embedded `--version` and exact commit.

@@ -56,6 +56,27 @@ type UI struct {
 	showSidebar bool
 	width       int
 	height      int
+	// First-run onboarding is intentionally distinct from the chat workspace.
+	authScreen string
+	runContext context.Context
+	pairingStarted bool
+	welcomeButton *tview.Button
+	welcomeQuit *tview.Button
+	welcomeCard *tview.Flex
+	welcomeOuter *tview.Flex
+	loginCard *tview.Flex
+	loginOuter *tview.Flex
+	loginColumns *tview.Flex
+	loginInstructions *tview.TextView
+	loginSpacer tview.Primitive
+	loginQR *tview.TextView
+	loginState *tview.TextView
+	loginBack *tview.Button
+	loginExpand *tview.Button
+	fullQR *tview.TextView
+	qrText string
+	qrWidth int
+	qrHeight int
 }
 
 func New(archive *store.DB, client *wa.Client, paths config.Paths) *UI {
@@ -101,10 +122,14 @@ func New(archive *store.DB, client *wa.Client, paths config.Paths) *UI {
 		AddItem(u.status, 1, 0, false)
 	u.pages = tview.NewPages().AddPage("main", u.main, true, true)
 	u.app.SetRoot(u.pages, true).EnableMouse(true).EnablePaste(true).SetFocus(u.input)
+	if client != nil && !client.Paired() {
+		u.setupAuthentication()
+	}
 	u.app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
 		w, h := screen.Size()
 		u.width = w
 		u.height = h
+		u.authLayout(w, h)
 		side := 0
 		switch {
 		case w >= 82:
@@ -123,6 +148,9 @@ func New(archive *store.DB, client *wa.Client, paths config.Paths) *UI {
 }
 
 func (u *UI) onKey(key *tcell.EventKey) *tcell.EventKey {
+	if u.authScreen != "" {
+		return u.authKey(key)
+	}
 	switch key.Key() {
 	case tcell.KeyCtrlC:
 		u.app.Stop()
@@ -662,24 +690,18 @@ func renderQR(text string) (string, int, int, error) {
 func (u *UI) handle(evt wa.Event) {
 	switch evt.Kind {
 	case wa.QR:
-		qr, qrWidth, qrHeight, err := renderQR(evt.Text)
-		if err != nil {
+		if err := u.handleQR(evt.Text); err != nil {
 			u.notice("QR rendering failed: " + err.Error())
 			return
 		}
-		view := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
-		view.SetBorder(true).SetTitle(" Scan QR using WhatsApp > Linked Devices ")
-		view.SetBackgroundColor(tcell.ColorWhite)
-		view.SetText(qr)
-		u.pages.RemovePage("qr")
-		u.pages.AddPage("qr", u.center(view, qrWidth+4, qrHeight+4), true, true)
-		if u.width < qrWidth+4 || u.height < qrHeight+4 {
-			u.notice(fmt.Sprintf("Enlarge terminal to at least %dx%d to scan QR", qrWidth+4, qrHeight+4))
-		} else {
-			u.notice("Scan the pairing code on your phone")
-		}
+		u.notice("QR ready — scan with WhatsApp > Linked devices")
+	case wa.Connected:
+		u.authConnected()
+		u.notice("Connected • chats are ready")
 	case wa.Status:
-		u.pages.RemovePage("qr")
+		if u.authScreen != "" && u.loginState != nil {
+			u.loginState.SetText("[#B5C3C8]" + tview.Escape(evt.Text) + "[-]")
+		}
 		u.notice(evt.Text)
 	case wa.Message:
 		u.refresh()
@@ -694,12 +716,19 @@ func (u *UI) handle(evt wa.Event) {
 }
 
 func (u *UI) Run(ctx context.Context) error {
+	u.runContext = ctx
 	if u.client == nil {
 		u.notice("DEMO MODE — fictional local data only; WhatsApp not connected")
 		return u.app.Run()
 	}
-	u.client.Start(ctx, func(evt wa.Event) {
-		u.app.QueueUpdateDraw(func() { u.handle(evt) })
-	})
+	// Existing linked devices reconnect immediately. New devices explicitly
+	// start network pairing only after the user selects Log in.
+	if u.client.Paired() {
+		u.client.Start(ctx, func(evt wa.Event) {
+			u.app.QueueUpdateDraw(func() { u.handle(evt) })
+		})
+	} else if u.authScreen == "" {
+		u.setupAuthentication()
+	}
 	return u.app.Run()
 }

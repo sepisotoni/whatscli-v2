@@ -26,6 +26,7 @@ const (
 	QR
 	Message
 	Failure
+	Connected
 )
 
 type Event struct {
@@ -71,6 +72,9 @@ func (c *Client) notify(evt Event) {
 	}
 }
 
+// Paired checks the local linked-device record without a network request.
+func (c *Client) Paired() bool { return c.api.Store.ID != nil }
+
 func (c *Client) Start(ctx context.Context, emit func(Event)) {
 	c.emit = emit
 	go func() {
@@ -107,7 +111,7 @@ func (c *Client) Start(ctx context.Context, emit func(Event)) {
 func (c *Client) onEvent(raw any) {
 	switch e := raw.(type) {
 	case *events.Connected:
-		c.notify(Event{Status, "Connected • local history enabled", ""})
+		c.notify(Event{Connected, "Connected • local history enabled", ""})
 	case *events.LoggedOut:
 		c.notify(Event{Failure, "Session revoked. Restart to pair again.", ""})
 	case *events.Disconnected:

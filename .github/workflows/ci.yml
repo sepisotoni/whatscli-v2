@@ -42,6 +42,8 @@ jobs:
         run: /tmp/whatshell --version | grep -F "WhatsCLI dev"
       - name: Simulated terminal demo and resize smoke test
         run: python3 scripts/pty_smoke.py /tmp/whatshell
+      - name: First-run welcome and login PTY smoke
+        run: python3 scripts/onboarding_pty_smoke.py /tmp/whatshell
       - name: Offline diagnostics smoke test
         env:
           WHATSHELL_HOME: ${{ runner.temp }}/whatscli-doctor-smoke
