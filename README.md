@@ -199,7 +199,7 @@ Race-enabled **testing** needs a working compiler/CGO on supported platforms; th
 - **v0.4:** WhatsApp statuses where available, terminal media adapters, tmux notifications, terminal-resize screenshot/fuzz tests.
 - **v1.0:** portable releases, encrypted backup options, exhaustive protocol testing, performance profiling and long-running SSH soak tests.
 
-See [architecture](docs/ARCHITECTURE.md), [detailed roadmap](docs/ROADMAP.md), [changelog](docs/CHANGELOG.md), and [security guidance](SECURITY.md).
+See the [real-device acceptance checklist](docs/ACCEPTANCE.md), [architecture](docs/ARCHITECTURE.md), [detailed roadmap](docs/ROADMAP.md), [changelog](docs/CHANGELOG.md), and [security guidance](SECURITY.md).
 
 ---
 
