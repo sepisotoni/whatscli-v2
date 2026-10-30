@@ -63,7 +63,7 @@ jobs:
       - name: Resolve dependencies
         run: go mod tidy
       - name: Install staticcheck
-        run: go install honnef.co/go/tools/cmd/staticcheck@v0.8.1
+        run: go install honnef.co/go/tools/cmd/staticcheck@v0.8.2
       - name: Static analysis
         run: staticcheck ./...
       - name: Source security scan (gosec)
