@@ -85,7 +85,8 @@ func New(archive *store.DB, client *wa.Client, paths config.Paths) *UI {
 		}
 	})
 	u.status = tview.NewTextView().SetDynamicColors(true)
-	u.status.SetBackgroundColor(darker).SetTextColor(tcell.ColorWhite)
+	u.status.SetBackgroundColor(darker)
+	u.status.SetTextColor(tcell.ColorWhite)
 	u.status.SetText(" [green]●[-] Whatshell  •  connecting…  | Tab: focus  Ctrl+N: new chat  /help: commands ")
 	u.body = tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(u.chatList, 27, 0, false).AddItem(u.messages, 0, 1, false)
@@ -627,7 +628,8 @@ func (u *UI) handle(evt wa.Event) {
 		}
 		view := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 		view.SetBorder(true).SetTitle(" Scan QR using WhatsApp > Linked Devices ")
-		view.SetBackgroundColor(tcell.ColorWhite).SetText(qr)
+		view.SetBackgroundColor(tcell.ColorWhite)
+		view.SetText(qr)
 		u.pages.RemovePage("qr")
 		u.pages.AddPage("qr", u.center(view, qrWidth+4, qrHeight+4), true, true)
 		if u.width < qrWidth+4 || u.height < qrHeight+4 {
