@@ -118,7 +118,8 @@ func TestWelcomeLogoAnimationAndBorderlessQR(t *testing.T) {
 	if view.loginQRRow == nil || view.loginQRCenter == nil {
 		t.Fatal("QR must be centred within a borderless dark panel")
 	}
-	view.authLayout(118, 44)
+	view.width, view.height = 118, 44
+	view.authLayout(view.width, view.height)
 	view.showAgreement()
 	view.agreementCheck.SetChecked(true)
 	view.acceptAgreement()

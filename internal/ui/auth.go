@@ -462,7 +462,9 @@ func (u *UI) handleQR(payload string) error {
 		u.loginQR.SetBackgroundColor(tcell.ColorWhite)
 		u.loginQR.SetTextColor(tcell.ColorBlack)
 		u.loginQR.SetText("\n" + qr)
-		u.authLayout(u.width, u.height)
+		if u.width > 0 && u.height > 0 {
+			u.authLayout(u.width, u.height)
+		}
 	}
 	if u.fullQR != nil {
 		u.fullQR.SetText(qr)
