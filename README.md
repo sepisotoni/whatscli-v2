@@ -1,163 +1,212 @@
-# Whatshell Go — SSH-first WhatsApp TUI
+<div align="center">
 
-A **Go-only**, self-hosted, terminal-native WhatsApp **starter client**, with an emerald-and-slate interface, SQLite offline archive, and WhatsApp Multi-Device transport via [WhatsMeow](https://github.com/tulir/whatsmeow).
+# 💬 WhatsCLI
 
-> **Project state: v0.2 development (not desktop parity).** The code implements the first functional vertical slice, but the full dependency graph has **not been compiled or tested against a real WhatsApp account** in the authoring environment. This is an **unofficial** third-party client; use at your own discretion and respect WhatsApp's terms. It is not affiliated with Meta or WhatsApp.
+### WhatsApp in your terminal. Built for SSH. Written in Go.
 
-## Status at a glance
+**A fast, keyboard-first WhatsApp Multi-Device client with a local SQLite archive and a WhatsApp-inspired terminal interface.**
 
-| Feature | Status |
-|---|---|
-| SSH terminal drawing, colors, keyboard, mouse, resizing | Implemented using tview/tcell; still needs on-device testing |
-| QR pairing, persistent Multi-Device session | Transport integrated; needs account-level verification |
-| Send/receive text | Transport integrated; needs account-level verification |
-| SQLite chat archive and offline browsing | Implemented; unit tests included |
-| Store previously cached bodies after delete events | Implemented for protocol revocations received while linked |
-| Preserve edits as message versions | Implemented for protocol edits received while linked |
-| Live command suggestions and `/chat`, `/versions`, `/logout` | Implemented |
-| Initial history sync import / contact names | Source implemented / contact names planned |
-| Read/delivered receipts / offline text search | Source implemented; account testing pending |
-| Send JPEG/PNG images and documents via SFTP `/attach` | Source implemented; WhatsApp testing pending |
-| On-demand incoming image/video/audio/document `/download` | Source implemented; WhatsApp testing pending |
-| Voice note sending / safe built-in playback | Planned |
-| Poll creation / voting / live results | Creation implemented in source; voting/results planned |
-| Status stories/replies/posts | Planned |
-| Terminal video/Sixel/Kitty rendering | Planned and terminal-dependent |
-| Local notifications / desktop notifications | In-app notification footer; native hooks planned |
-| Plaintext history `/backup` / encryption-at-rest / multiple accounts | Snapshot implemented / encryption and multi-account planned |
+[![Go Quality & Security](https://github.com/sepisotoni/WhatsCLI/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sepisotoni/WhatsCLI/actions/workflows/ci.yml)
+![Go](https://img.shields.io/badge/Go-1.27.3-00ADD8?logo=go&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-local%20first-128C7E?logo=sqlite&logoColor=white)
+![SSH](https://img.shields.io/badge/SSH-ready-25D366)
+![Status](https://img.shields.io/badge/status-v0.2%20development-42545e)
 
-Local archiving cannot recover deleted content that **was never received**. It also does not bypass disappearing messages, view-once protections, or WhatsApp retention limits. Full desktop feature parity and a guarantee of zero data loss are not realistic claims for this initial release.
+[Quick start](#-quick-start) · [Preview](#-terminal-preview) · [Commands](#-keyboard--commands) · [Architecture](#-architecture) · [Roadmap](#-what-works-today)
 
-## Requirements
+</div>
 
-- Go **1.27.3** (CI toolchain target), with internet access to fetch modules on first build.
-- Linux, macOS, or Windows terminal (SSH sessions are the primary target).
-- An existing WhatsApp account for device linking.
-- A real UTF-8 terminal and a working `TERM` value (for example `xterm-256color` or `screen-256color`).
-- Terminal size **at least 90×30** preferred for pairing QR code and side-by-side layout.
+> [!IMPORTANT]
+> **v0.2 is a development release, not a finished WhatsApp Desktop replacement.** The Go project compiles and its automated CI checks pass. Pairing, messaging and media flows **still require a real-account / real-SSH acceptance test**. WhatsCLI is an **unofficial client**, not affiliated with or endorsed by WhatsApp or Meta. Use a test account first and follow the service's terms.
 
-Everything in the app is Go; SQLite uses `modernc.org/sqlite` (no C compiler for ordinary builds). The code registers `sqlite3` as a driver alias to keep WhatsMeow's SQLite dialect compatible with the pure-Go driver.
+## ✨ Terminal preview
 
-## Quick start
+![WhatsCLI chat interface — illustrative preview](assets/chat-preview.svg)
+
+<details>
+<summary><strong>View the slash-command palette</strong></summary>
+
+![WhatsCLI filtered slash-command palette — illustrative preview](assets/command-palette-preview.svg)
+
+</details>
+
+**About these images:** These are *illustrative, code-based UI mockups* following the project's dark emerald/slate styling—not captured from a linked WhatsApp account. Actual rendering depends on your terminal, size and color support. The client currently displays raw chat JIDs; contact display names are on the roadmap. Screenshots from a real PTY session will replace these previews after interactive testing.
+
+## ⚡ Why WhatsCLI?
+
+| 🖥️ Terminal native | 🗃️ Own your local archive | 🔐 SSH-friendly |
+|:--|:--|:--|
+| Designed for a TTY, mouse and keyboard; no browser or desktop environment required | Chat messages live in your local SQLite database with edit versions and deletion flags | Works in ordinary terminal sessions; uses SFTP for attachments rather than pretending SSH has native drag-and-drop |
+
+- **Keyboard-first:** Tab navigation, searchable slash palette, shortcuts for chats and search.
+- **Go throughout:** `tview` / `tcell` interface, WhatsMeow protocol integration, and a CGO-free SQLite driver for normal builds.
+- **Offline-friendly:** Read messages already cached locally even when WhatsApp is disconnected.
+- **Transparent development:** Automated formatting, race tests, static analysis, vulnerability scanning and release builds.
+
+## 🚀 Quick start
+
+**Requirements:** Go **1.27.3** (as used in the workflow), an existing WhatsApp account, a UTF-8 terminal, and network access for first-time dependency download and pairing. Linux is the primary SSH target; macOS and Windows build targets are configured but not yet interactively verified.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/whatshell-go.git
-cd whatshell-go
-go mod tidy     # also creates go.sum; commit it before opening a PR
+git clone https://github.com/sepisotoni/WhatsCLI.git
+cd WhatsCLI
+
+go mod tidy                 # generate/refresh go.sum, currently not committed
 go run ./cmd/whatshell
 ```
 
-If you downloaded the starter ZIP, extract it and run the last two commands instead. The repository URL is illustrative until the project has been published.
+On your phone: **WhatsApp → Linked devices → Link a device**, then scan the QR displayed in the terminal. Reopening the client should reuse the persisted Multi-Device session while the link remains valid. A terminal of roughly **90 × 30** or larger is recommended for first-time QR pairing.
 
-On first login, scan the on-screen QR using WhatsApp on your phone → **Linked devices** → **Link a device**. The terminal may need to be widened to show the QR cleanly. Re-launching uses the saved device session without scanning again unless the session expired/revoked.
+### Build a standalone binary
 
 ```bash
-# Static build (the app itself needs no CGO):
 CGO_ENABLED=0 go build -trimpath -o bin/whatshell ./cmd/whatshell
-
-# Use the binary from a normal OpenSSH shell:
-ssh -t myuser@myserver '/home/myuser/whatshell-go/bin/whatshell'
-
-# Safer for terminal allocation if needed:
-ssh -tt myuser@myserver 'TERM=xterm-256color /home/myuser/whatshell-go/bin/whatshell'
+./bin/whatshell
 ```
 
-**SSH security:** Prefer public-key login, keep the server patched, and **do not** run Whatshell as root or expose its files to other users. Use separate OS accounts for separate users. Preserve `TERM` from the SSH client rather than forcing `xterm-256color` if your client supports another terminfo type.
+> **Go module note:** The source module currently retains the original identifier `github.com/sepisotoni/whatshell-go`; the GitHub repository is `sepisotoni/WhatsCLI`. Building from a clone works because internal imports use the existing module name. The naming will be standardized in a future cleanup.
 
-## Controls
+### Run over SSH
 
-| Shortcut / command | Meaning |
-|---|---|
-| Mouse click chat | Open chat |
-| Mouse wheel, ↑/↓, PgUp/PgDn | Scroll focused pane |
-| `Tab` | Cycle visible panes; autocomplete first slash suggestion |
-| `/` and type | Real-time filtered command list |
-| `Enter` in composer | Send text or run complete command |
-| `Ctrl+N` | New chat; enter international phone number with country code |
-| `Ctrl+F` | Search locally archived text |
-| `Ctrl+L` | Toggle sidebar on narrow SSH windows |
-| `/chats` | Pick a cached chat in a modal |
-| `/search words` | Case-insensitive literal search across cached messages |
-| `/attach filename.jpg` | Send an image/document uploaded by SFTP into `uploads/` (16 MiB cap) |
-| `/download MESSAGE_ID` | Download incoming media into `downloads/` (no auto-open) |
-| `/poll Question \| Yes \| No` | Create single-choice WhatsApp poll |
-| `/backup` | Private SQLite history snapshot (does not include session keys) |
-| `/chat 27123456789` | Open a chat by phone number |
-| `/chat 123@g.us` | Open a group by its full JID |
-| `/versions MESSAGE_ID` | Show previously cached text versions for a specific message |
-| `/help` | Show controls |
-| `/logout` | Request remote unlink, then delete the **session** DB and its WAL files; keep history |
-| `/quit` / `Ctrl+C` | Exit without unlinking |
-
-Tip: message IDs are shown beside media messages to support `/download ID`. Sender and chat IDs are intentionally shown in the initial version; WhatsApp contact names and a contact picker are planned.
-
-## Data & SQLite
-
-Default directory: `~/.local/share/whatshell-go/`, or `$XDG_DATA_HOME/whatshell-go`, with override `$WHATSHELL_HOME`. Directory is `0700` and created database files are `0600`.
-
-- `history.sqlite3`: app-owned `messages`, `message_versions`, `message_receipts`, `message_media` and indexes.
-- `session.sqlite3`: WhatsMeow's persistent device/session/cryptographic keys.
-- `uploads/`: private SFTP drop-off directory; `downloads/`: private on-demand attachment download directory; `backups/`: plaintext history snapshots created by `/backup`.
-- `-wal`/`-shm`: SQLite sidecars that can exist while the app runs.
-
-**Important:** SQLite content is not encrypted at rest. Filesystem permissions are not disk encryption. Use full-disk encryption, protect backups, and do not share session database files. Deleting tokens using `/logout` removes local session files, but **cannot guarantee forensic secure erasure on SSDs**. If remote unlink fails, local data is still wiped, and the remote unlink warning is displayed briefly before exit; check WhatsApp's linked devices list on your phone.
+Install/build on your server, then from your local computer:
 
 ```bash
-# Back up a consistent snapshot (requires sqlite3 CLI):
-sqlite3 "$HOME/.local/share/whatshell-go/history.sqlite3" \
-  ".backup '$HOME/whatshell-history-backup.sqlite3'"
-
-# Inspect tables (do not publish the output):
-sqlite3 "$HOME/.local/share/whatshell-go/history.sqlite3" '.tables'
+ssh -tt user@your-server 'cd ~/WhatsCLI && ./bin/whatshell'
 ```
 
-Run `/backup` for an atomic SQLite history snapshot in the private `backups/` directory; **encrypt the backup separately before moving it off the machine**. In production, use an encrypted, versioned backup destination, and test recovery periodically. WAL + `synchronous=FULL` improves resilience to crashes but does **not** guarantee zero loss under arbitrary hardware failure or third-party protocol changes.
+For reliable colors, use a UTF-8 terminal with a working `$TERM` entry (commonly `xterm-256color` or `screen-256color`). Mouse input and resizing work through `tcell`'s terminal handling, but vary by SSH client and terminal emulator. Prefer public-key SSH authentication and **do not run the client as root**.
 
-## Transfer files over SSH
+## ⌨️ Keyboard & commands
 
-Conventional SSH **does not transport GUI drag-and-drop into a TUI**. Use `sftp` or `scp` to place files in a server-side upload directory. **Image/document sending is implemented in source as `/attach NAME`**, with a 16 MiB file cap. File uploads and downloads still require live account-level testing.
+| Control | Action |
+|:--|:--|
+| **Tab** | Cycle panes; autocomplete the first matching slash command |
+| **Enter** | Send message / execute command |
+| **Arrow keys / PgUp / PgDn** | Navigate the focused list or scroll message history |
+| **Mouse** | Click chats, scroll history, select UI elements |
+| **Ctrl + N** | Open a new chat by international phone number |
+| **Ctrl + F** | Search the offline message archive |
+| **Ctrl + L** | Toggle the sidebar on small terminal widths |
+| **Ctrl + C** | Exit without unlinking |
+| `/help` | Show built-in help |
+| `/chat 27123456789` | Open a chat by country-code phone number |
+| `/chats` | Choose a cached conversation |
+| `/search text` | Search messages stored on this machine |
+| `/versions MESSAGE_ID` | Read cached prior versions of an edited message |
+| `/attach photo.jpg` | Send a file staged in `uploads/` (up to 16 MiB) |
+| `/download MESSAGE_ID` | Save an incoming attachment to `downloads/` |
+| `/poll Question \| Yes \| No` | Create a single-choice WhatsApp poll |
+| `/backup` | Create a plaintext history snapshot (not the login keys) |
+| `/logout` | Request remote unlink and remove local session files, **keeping chat history** |
+| `/quit` | Exit the application |
+
+Typing `/` in the message input opens a **live-filtered command palette**. Use Tab to complete a suggestion; commands appear as you type.
+
+## 📂 Sending files through SSH
+
+A conventional SSH terminal cannot accept operating-system drag-and-drop into a remote program. Upload attachments with SFTP first:
 
 ```bash
-ssh myuser@myserver 'mkdir -p ~/.local/share/whatshell-go/uploads && chmod 700 ~/.local/share/whatshell-go/uploads'
-sftp myuser@myserver
-# sftp> put ./photo.jpg .local/share/whatshell-go/uploads/photo.jpg
+# From your own computer
+sftp user@your-server
+# In the SFTP prompt:
+# put ./photo.jpg .local/share/whatshell-go/uploads/photo.jpg
 ```
 
-File controls currently validate path roots, reject symlink escapes, enforce a 16 MiB upload limit, and avoid arbitrary command execution. Resumable uploads and preview controls are pending. Video rendering should be an optional adapter only after capability negotiation (plain ANSI fallback; Kitty/Sixel when supported). Never assume `DISPLAY` over raw SSH.
+Inside WhatsCLI, open a chat and enter `/attach photo.jpg`. The current transfer implementation accepts ordinary JPEG/PNG images and documents up to **16 MiB**, rejects upload paths outside its private root, and downloads incoming media on demand. No downloaded file is auto-executed or auto-opened. **Live media compatibility is still awaiting account-level testing.**
 
-## Tests and code quality
+If `$WHATSHELL_HOME` is configured on the server, upload into `$WHATSHELL_HOME/uploads/` instead.
+
+## 🗄️ Local data & privacy
+
+Default storage: `~/.local/share/whatshell-go/` (also honors `$XDG_DATA_HOME` or `$WHATSHELL_HOME`).
+
+```text
+~/.local/share/whatshell-go/
+├── session.sqlite3      # WhatsApp device + authentication secrets
+├── history.sqlite3      # Chat messages + edit history + deletion flags
+├── uploads/             # Files staged via SFTP
+├── downloads/           # Explicitly saved received media
+└── backups/             # History-only SQLite snapshots
+```
+
+The application attempts to restrict its data directories to `0700` and database files to `0600`. SQLite uses WAL and synchronous writes for the message archive. These controls reduce accidental exposure, **but the database is not encrypted at rest**. Protect your server and backups with disk encryption, and never upload session keys, chat databases, or screenshots with personal conversations to a public issue.
+
+**Deleted and edited messages:** WhatsCLI retains *already observed* message bodies when a revocation event arrives, and stores previous bodies when it receives edit events. It cannot reconstruct messages it never received or bypass view-once/disappearing-message limitations. Backups can preserve plaintext conversation history; consider the privacy implications for everyone in those chats.
+
+`/logout` removes local session data but keeps cached history. A remote unlink failure must be verified in WhatsApp's Linked devices screen. Local file deletion is **not** guaranteed forensic erasure on SSDs.
+
+## 🧩 Architecture
+
+```mermaid
+flowchart LR
+    A[SSH terminal / TTY] --> B[tview + tcell UI]
+    B --> C[WhatsMeow Multi-Device client]
+    C <--> W[(WhatsApp service)]
+    C --> D[(SQLite session DB)]
+    C --> E[(SQLite local history)]
+    E --> B
+    B --> F[SFTP upload / download folders]
+    B --> G[Slash commands + search]
+    G --> E
+```
+
+| Area | Source |
+|:--|:--|
+| Entrypoint | [`cmd/whatshell`](cmd/whatshell) |
+| Terminal interface & command palette | [`internal/ui`](internal/ui) |
+| WhatsApp transport, media, polls | [`internal/wa`](internal/wa) |
+| SQLite persistence, history & backups | [`internal/store`](internal/store) |
+| Private paths & permissions | [`internal/config`](internal/config) |
+| SFTP drop-off and download safety | [`internal/transfer`](internal/transfer) |
+| CI and release automation | [`.github/workflows`](.github/workflows) |
+
+## ✅ What works today?
+
+| Feature | Development state |
+|:--|:--|
+| Go build, linting, tests, race detection, static checks | ✅ Passing in GitHub Actions |
+| Local SQLite history, edit versions, deletion tombstones, search | ✅ Source implemented & unit-tested |
+| Backup snapshots and private-directory guards | ✅ Source implemented & unit-tested |
+| TUI layout, resize handling, keyboard/mouse, slash autocomplete | ✅ Source implemented; additional UI tests added |
+| WhatsApp QR pairing & persisted sessions | 🟡 Integrated; live-account test pending |
+| Send/receive messages & read receipts | 🟡 Integrated; live-account test pending |
+| Initial history sync, image/document upload & media download | 🟡 Integrated; live-account test pending |
+| Create single-choice polls | 🟡 Integrated; live-account test pending |
+| Poll voting/results, voice-note sending, contact names | ⚪ Planned |
+| Status viewing/posting, video-in-terminal, media previews | ⚪ Planned |
+| Full desktop feature parity & guaranteed zero data loss | ❌ Not claimed |
+
+Automated tests **do not prove** live WhatsApp interoperability, SSH terminal compatibility across every emulator, or perfect data retention. An authorized account + PTY acceptance pass is required before a stable release.
+
+## 🧪 Development & CI
 
 ```bash
 go mod tidy
 go test -race -count=1 ./...
 go vet ./...
 bash scripts/check.sh
-go install honnef.co/go/tools/cmd/staticcheck@v0.8.1
-staticcheck ./...
+CGO_ENABLED=0 go build ./cmd/whatshell
 ```
 
-GitHub Actions runs **on every push and pull request**: gofmt, custom checks, go vet, race tests, coverage, CGO-free build, golangci-lint v2, staticcheck, gosec and govulncheck. Dependabot checks Go modules and Actions weekly. Race detection requires a supported compiler/CGO at **test time** even though release builds can use `CGO_ENABLED=0`.
+[GitHub Actions](https://github.com/sepisotoni/WhatsCLI/actions) runs `gofmt`, `go vet`, custom checks, race-enabled tests, coverage, `golangci-lint`, Staticcheck, gosec, govulncheck, and a CGO-free build on pushes/PRs. Dependabot monitors dependencies. Tagged `v*` builds are configured for multiple operating systems, with SHA-256 checksums.
 
-Note: linters find likely mistakes; they do **not** autonomously rewrite or optimize all code, prove memory-leak freedom, or guarantee security. Add benchmarks, load tests, profiling and target-specific acceptance tests before production use.
+Race-enabled **testing** needs a working compiler/CGO on supported platforms; the normal **release binary** can still be built without CGO. Static analysis catches many errors, but not every performance issue or vulnerability.
 
-## Publish to a new repository
+## 🛣️ Roadmap
 
-The ZIP is already a local Git repository structure. After running `go mod tidy`, use GitHub CLI with an authenticated account:
+- **v0.3:** complete live login/messaging acceptance tests; polish message UX, group display, reconnect behavior, queued sends, poll voting, voice notes.
+- **v0.4:** WhatsApp statuses where available, terminal media adapters, tmux notifications, terminal-resize screenshot/fuzz tests.
+- **v1.0:** portable releases, encrypted backup options, exhaustive protocol testing, performance profiling and long-running SSH soak tests.
 
-```bash
-git init -b main
-git add .
-git commit -m "feat: initial SSH-first WhatsApp TUI foundation"
-gh auth login              # if not already authenticated
-gh repo create whatshell-go --private --source=. --remote=origin --push
-```
+See [architecture](docs/ARCHITECTURE.md), [detailed roadmap](docs/ROADMAP.md), [changelog](docs/CHANGELOG.md), and [security guidance](SECURITY.md).
 
-The module path is initially `github.com/sepisotoni/whatshell-go`. If you create the repository in another account or under a new name, replace the path in `go.mod` and all Go import paths before building.
+---
 
-## Design overview
+<div align="center">
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/CHANGELOG.md](docs/CHANGELOG.md) and [SECURITY.md](SECURITY.md). The implementation separates tview UI, WhatsMeow integration, app-owned SQLite archive, and configuration. Protocol callbacks write to storage first, then update the UI on the tview event loop. Session secrets are kept separate from historical conversations.
+**Made for people who live in the terminal.**
 
-## Tagged releases
+*WhatsCLI is an independent, experimental project and is not an official WhatsApp product.*
 
-The `release.yml` workflow builds CGO-free Linux amd64/arm64, macOS amd64/arm64, and Windows amd64 artifacts when a `v*` tag is pushed. It publishes a `SHA256SUMS` manifest. Create tags only after CI and a linked-account smoke test pass.
+</div>
