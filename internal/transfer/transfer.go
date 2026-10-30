@@ -98,16 +98,17 @@ func SaveDownload(root, name string, write func(*os.File) error) (string, error)
 	if err := os.MkdirAll(root, 0700); err != nil {
 		return "", err
 	}
-	if err := os.Chmod(root, 0700); err != nil {
-		return "", err
-	}
-	// Avoid following a symlink provided as the download directory.
+	// Check the directory itself before changing its permissions: Chmod follows
+	// symlinks and would otherwise modify an unrelated target directory.
 	info, err := os.Lstat(root)
 	if err != nil {
 		return "", err
 	}
 	if !info.IsDir() {
 		return "", errors.New("download root is not a real directory")
+	}
+	if err := os.Chmod(root, 0700); err != nil {
+		return "", err
 	}
 	basename := SafeName(name)
 	for i := 0; i < 1000; i++ {
