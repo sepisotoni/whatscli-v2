@@ -144,12 +144,31 @@ func (u *UI) setupAuthentication() {
 
 	heading := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignLeft)
 	heading.SetBackgroundColor(slate)
-	heading.SetText("[#25D366::b]LINK A DEVICE[-]\n\n[white::b]Log in to WhatsApp[-]\n\n[#B5C3C8]1  On your phone, open WhatsApp.\n\n2  Go to Settings or ⋮ Menu → Linked devices.\n\n3  Select Link a device and scan the QR.\n\n4  Keep your terminal open until linked.[-]\n\n[#8696A0]The code refreshes automatically. Never share it.\nPhone-number pairing is not supported yet.[-]")
+	heading.SetText("[#00E69C::b]◇ LINK A DEVICE[-]\n" +
+		"[#B5C3C8]    Log in to WhatsApp[-]\n\n" +
+		"[#00D78D]01[-]  On your phone, open WhatsApp.\n\n" +
+		"[#00D78D]02[-]  Go to Settings or ⋮ → Linked devices.\n\n" +
+		"[#00D78D]03[-]  Select Link a device and scan the QR.\n\n" +
+		"[#00D78D]04[-]  Keep your terminal open until linked.\n\n" +
+		"[#78948F]ⓘ The code refreshes automatically. Never share it.[-]\n" +
+		"[#78948F]Phone-number pairing is not available yet.[-]")
 	u.loginQR = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
-	u.loginQR.SetBackgroundColor(tcell.ColorWhite)
-	u.loginQR.SetTextColor(tcell.ColorBlack)
-	u.loginQR.SetText("\n\n\n\n\n    Preparing secure QR code…    ")
-	u.loginQR.SetBorder(true).SetBorderColor(tcell.NewRGBColor(50, 61, 65))
+	u.loginQR.SetBackgroundColor(slate)
+	u.loginQR.SetTextColor(tcell.ColorWhite)
+	u.loginQR.SetText("[#78948F]Waiting for QR code…[-]")
+	// White is confined to the code itself, not the entire right-hand panel.
+	// Do not add a second glowing border or decorative Scan button.
+	u.loginQR.SetBorder(false)
+	u.loginQRRow = tview.NewFlex().SetDirection(tview.FlexColumn)
+	u.loginQRRow.SetBackgroundColor(slate)
+	u.loginQRRow.AddItem(nil, 0, 1, false).
+		AddItem(u.loginQR, 47, 0, false).
+		AddItem(nil, 0, 1, false)
+	u.loginQRCenter = tview.NewFlex().SetDirection(tview.FlexRow)
+	u.loginQRCenter.SetBackgroundColor(slate)
+	u.loginQRCenter.AddItem(nil, 0, 1, false).
+		AddItem(u.loginQRRow, 25, 0, false).
+		AddItem(nil, 0, 1, false)
 	u.loginState = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	u.loginState.SetBackgroundColor(slate)
 	u.loginState.SetText("[#8696A0]Waiting for device pairing…[-]")
@@ -158,7 +177,7 @@ func (u *UI) setupAuthentication() {
 	u.loginColumns = tview.NewFlex().SetDirection(tview.FlexColumn)
 	u.loginColumns.AddItem(heading, 0, 1, false).
 		AddItem(u.loginSpacer, 2, 0, false).
-		AddItem(u.loginQR, 0, 1, false)
+		AddItem(u.loginQRCenter, 0, 1, false)
 	u.loginBack = tview.NewButton("  ← Back  ")
 	u.loginBack.SetBackgroundColor(slate)
 	u.loginBack.SetLabelColor(tcell.ColorWhite)
@@ -177,7 +196,7 @@ func (u *UI) setupAuthentication() {
 		AddItem(actionLine, 3, 0, true)
 	loginCard.SetBackgroundColor(slate)
 	loginCard.SetBorder(true).SetBorderColor(tcell.NewRGBColor(50, 61, 65))
-	loginCard.SetTitle("  WhatsCLI  /  Link device  ").SetTitleColor(green)
+	// The title lives inside the left column, matching the reference.
 	u.loginCard = loginCard
 	u.loginOuter = tview.NewFlex().SetDirection(tview.FlexColumn)
 	u.loginOuter.SetBackgroundColor(darker)
@@ -237,18 +256,30 @@ func (u *UI) authLayout(width, height int) {
 		u.loginColumns.SetDirection(tview.FlexRow)
 		u.loginColumns.ResizeItem(u.loginSpacer, 0, 0)
 		u.loginColumns.ResizeItem(u.loginInstructions, 12, 0)
-		u.loginColumns.ResizeItem(u.loginQR, 0, 1)
+		u.loginColumns.ResizeItem(u.loginQRCenter, 0, 1)
 	} else {
 		u.loginColumns.SetDirection(tview.FlexColumn)
 		u.loginColumns.ResizeItem(u.loginInstructions, 0, 1)
 		u.loginColumns.ResizeItem(u.loginSpacer, 2, 0)
-		u.loginColumns.ResizeItem(u.loginQR, 0, 1)
+		u.loginColumns.ResizeItem(u.loginQRCenter, 0, 1)
 	}
-	if u.qrWidth > 0 && (width < u.qrWidth+4 || height < u.qrHeight+12) {
-		u.loginQR.SetText("\n\n\n[#17262B]QR ready. Press Q or select Full-screen QR to scan.[-]")
-		u.loginState.SetText(fmt.Sprintf("[yellow]Terminal too small for QR (%dx%d); enlarge or press Q for full screen.[-]", u.qrWidth+4, u.qrHeight+12))
+	// Keep the scannable module size fixed, with a small white quiet zone,
+	// and place the white code in the centre of the dark pairing column.
+	qrWidth, qrHeight := 47, 25
+	if u.qrWidth > 0 {
+		qrWidth, qrHeight = u.qrWidth+4, u.qrHeight+2
+	}
+	u.loginQRRow.ResizeItem(u.loginQR, qrWidth, 0)
+	u.loginQRCenter.ResizeItem(u.loginQRRow, qrHeight, 0)
+	if u.qrWidth > 0 && (width < u.qrWidth+8 || height < u.qrHeight+12) {
+		u.loginQR.SetBackgroundColor(slate)
+		u.loginQR.SetTextColor(tcell.ColorWhite)
+		u.loginQR.SetText("[#8696A0]QR ready — press Q for full-screen QR[-]")
+		u.loginState.SetText(fmt.Sprintf("[yellow]Enlarge terminal to %dx%d or press Q for full-screen QR.[-]", u.qrWidth+8, u.qrHeight+12))
 	} else if u.qrText != "" {
-		u.loginQR.SetText(u.qrText)
+		u.loginQR.SetBackgroundColor(tcell.ColorWhite)
+		u.loginQR.SetTextColor(tcell.ColorBlack)
+		u.loginQR.SetText("\n" + u.qrText)
 	}
 }
 
@@ -428,7 +459,10 @@ func (u *UI) handleQR(payload string) error {
 	u.qrWidth = width
 	u.qrHeight = height
 	if u.loginQR != nil {
-		u.loginQR.SetText(qr)
+		u.loginQR.SetBackgroundColor(tcell.ColorWhite)
+		u.loginQR.SetTextColor(tcell.ColorBlack)
+		u.loginQR.SetText("\n" + qr)
+		u.authLayout(u.width, u.height)
 	}
 	if u.fullQR != nil {
 		u.fullQR.SetText(qr)

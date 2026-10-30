@@ -85,6 +85,12 @@ CGO_ENABLED=0 go build -trimpath -o bin/whatshell ./cmd/whatshell
 
 > **Go module note:** The source module currently retains the original identifier `github.com/sepisotoni/whatshell-go`; the GitHub repository is `sepisotoni/WhatsCLI`. Building from a clone works because internal imports use the existing module name. The naming will be standardized in a future cleanup.
 
+### Screenshot-inspired onboarding design
+
+The welcome screen uses a pulsing WhatsCLI terminal-bubble icon with twin moving light rails, the centred “Welcome to WhatsCLI” heading, and the dark/emerald visual language shown in the design reference. The agreement remains a separate four-part page with an explicit acknowledgement.
+
+The QR pairing screen keeps the four-step instructions on the left and the scannable code **centred on the right, without any decorative QR outline or “Scan with WhatsApp” button**. The only pairing actions are Back and Full-screen QR. The plain white QR modules retain their native size and are never animated or scaled. This is terminal-native rendering; blur and textured wallpaper can vary by terminal.
+
 ### First-run experience: animated welcome and agreement
 
 WhatsCLI now opens an animated dark landing page with a green **Get started** action, followed by a dedicated **unofficial-client disclosure**. No WhatsApp pairing begins until the user checks the acknowledgement and explicitly selects **Agree & continue**.
