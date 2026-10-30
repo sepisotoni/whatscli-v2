@@ -51,12 +51,12 @@ func Resolve() (Paths, error) {
 	for _, folder := range []string{"uploads", "downloads"} {
 		path := filepath.Join(base, folder)
 		// #nosec G703 -- The path is deliberately selected by the local process owner via WHATSHELL_HOME or XDG_DATA_HOME.
-	if err := os.MkdirAll(path, 0o700); err != nil {
+		if err := os.MkdirAll(path, 0o700); err != nil {
 			return Paths{}, fmt.Errorf("create %s: %w", folder, err)
 		}
 		// Never accept a symlink pretending to be a private folder.
 		// #nosec G703 -- The path is deliberately selected by the local process owner via WHATSHELL_HOME or XDG_DATA_HOME.
-	info, err := os.Lstat(path)
+		info, err := os.Lstat(path)
 		if err != nil {
 			return Paths{}, err
 		}
@@ -64,7 +64,7 @@ func Resolve() (Paths, error) {
 			return Paths{}, fmt.Errorf("%s is not a directory", path)
 		}
 		// #nosec G703 -- The path is deliberately selected by the local process owner via WHATSHELL_HOME or XDG_DATA_HOME.
-	if err := os.Chmod(path, 0o700); err != nil {
+		if err := os.Chmod(path, 0o700); err != nil {
 			return Paths{}, err
 		}
 	}
