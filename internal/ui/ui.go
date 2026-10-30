@@ -28,6 +28,7 @@ var commands = []struct{ Name, Description string }{
 	{"/versions", "view cached edits: /versions MESSAGE_ID"},
 	{"/search", "search cached messages"},
 	{"/chats", "choose a chat on compact terminals"},
+	{"/alias", "set or remove a local chat name: /alias NAME or -"},
 	{"/attach", "send an image or document from uploads/"},
 	{"/download", "download media using its message ID"},
 	{"/backup", "create a consistent private history snapshot"},
@@ -275,6 +276,20 @@ func (u *UI) command(raw string) {
 		u.openChat(arg)
 	case "/chats":
 		u.chooseChat()
+	case "/alias":
+		if u.chat == "" || arg == "" {
+			u.notice("Open a chat, then /alias DISPLAY NAME (or /alias - to remove)")
+			break
+		}
+		if arg == "-" {
+			arg = ""
+		}
+		if err := u.archive.SetAlias(context.Background(), u.chat, arg); err != nil {
+			u.notice("Alias: " + err.Error())
+		} else {
+			u.refresh()
+			u.notice("Local chat name saved; no WhatsApp contact changed")
+		}
 	case "/search":
 		if arg == "" {
 			u.promptSearch()
@@ -402,6 +417,7 @@ Ctrl+L: Toggle compact sidebar
 Tab: Cycle focus    Mouse wheel/arrow keys: scroll
 /chat PHONE         Open a person/group
 /chats              Browse saved chat list
+/alias NAME         Local-only chat name (/alias - clears)
 /attach FILE        Send a server-side uploads/ file (SFTP first)
 /download ID        Save a received attachment to downloads/
 /backup             Snapshot archive (NOT login credentials)
@@ -419,7 +435,11 @@ func (u *UI) chooseChat() {
 	list.SetBorder(true).SetTitle(" Cached chats ")
 	for _, c := range u.chats {
 		c := c
-		list.AddItem(tview.Escape(c.JID), tview.Escape(c.LastBody), 0, func() {
+		label := c.JID
+		if c.Alias != "" {
+			label = c.Alias + " (" + c.JID + ")"
+		}
+		list.AddItem(tview.Escape(label), tview.Escape(c.LastBody), 0, func() {
 			u.pages.RemovePage("chatpicker")
 			u.openChat(c.JID)
 		})
@@ -532,7 +552,11 @@ func (u *UI) refresh() {
 		if len([]rune(preview)) > 35 {
 			preview = string([]rune(preview)[:35]) + "…"
 		}
-		u.chatList.AddItem(tview.Escape(strings.Split(c.JID, "@")[0]), tview.Escape(preview), 0, nil)
+		label := c.Alias
+		if label == "" {
+			label = strings.Split(c.JID, "@")[0]
+		}
+		u.chatList.AddItem(tview.Escape(label), tview.Escape(preview), 0, nil)
 	}
 	if selected >= 0 {
 		u.chatList.SetCurrentItem(selected)
@@ -583,7 +607,11 @@ func (u *UI) refreshMessages() {
 	if len(msg) == 0 {
 		b.WriteString("  No messages cached here yet.\n")
 	}
-	u.messages.SetTitle(" " + u.chat + " ")
+	title := u.chat
+	if name, err := u.archive.Alias(context.Background(), u.chat); err == nil && name != "" {
+		title = name + " (" + u.chat + ")"
+	}
+	u.messages.SetTitle(" " + tview.Escape(title) + " ")
 	u.messages.SetText(b.String())
 	u.messages.ScrollToEnd()
 }

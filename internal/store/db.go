@@ -48,6 +48,7 @@ type Message struct {
 
 type Chat struct {
 	JID       string
+	Alias     string
 	LastBody  string
 	Timestamp time.Time
 }
@@ -72,31 +73,9 @@ func Open(ctx context.Context, path string) (*DB, error) {
 			return nil, fmt.Errorf("sqlite configuration: %w", err)
 		}
 	}
-	for _, statement := range []string{
-		`CREATE TABLE IF NOT EXISTS messages (
-		 chat_jid TEXT NOT NULL, message_id TEXT NOT NULL,
-		 sender_jid TEXT NOT NULL DEFAULT '', body TEXT NOT NULL DEFAULT '',
-		 timestamp_ns INTEGER NOT NULL, outgoing INTEGER NOT NULL DEFAULT 0,
-		 deleted INTEGER NOT NULL DEFAULT 0, edited INTEGER NOT NULL DEFAULT 0,
-		 PRIMARY KEY(chat_jid,message_id))`,
-		`CREATE TABLE IF NOT EXISTS message_versions (
-		 id INTEGER PRIMARY KEY AUTOINCREMENT, chat_jid TEXT NOT NULL,
-		 message_id TEXT NOT NULL, previous_body TEXT NOT NULL,
-		 changed_at_ns INTEGER NOT NULL,
-		 FOREIGN KEY(chat_jid,message_id) REFERENCES messages(chat_jid,message_id))`,
-		`CREATE INDEX IF NOT EXISTS idx_messages_chat_time
-         ON messages(chat_jid,timestamp_ns DESC)`,
-		`CREATE TABLE IF NOT EXISTS message_receipts (
-          chat_jid TEXT NOT NULL, message_id TEXT NOT NULL, level INTEGER NOT NULL DEFAULT 0,
-          PRIMARY KEY(chat_jid,message_id))`,
-		`CREATE TABLE IF NOT EXISTS message_media (
-          chat_jid TEXT NOT NULL, message_id TEXT NOT NULL, name TEXT NOT NULL DEFAULT '', payload BLOB NOT NULL,
-          PRIMARY KEY(chat_jid,message_id), FOREIGN KEY(chat_jid,message_id) REFERENCES messages(chat_jid,message_id))`,
-	} {
-		if _, err = db.ExecContext(ctx, statement); err != nil {
-			_ = db.Close()
-			return nil, fmt.Errorf("sqlite migration: %w", err)
-		}
+	if err := migrate(ctx, db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("sqlite migration: %w", err)
 	}
 	return &DB{sql: db}, nil
 }
@@ -153,7 +132,8 @@ func (d *DB) MarkDeleted(ctx context.Context, chat, id string, at time.Time) err
 
 func (d *DB) Chats(ctx context.Context) ([]Chat, error) {
 	rows, err := d.sql.QueryContext(ctx,
-		`SELECT m.chat_jid,m.body,m.timestamp_ns FROM messages m
+		`SELECT m.chat_jid,COALESCE(a.alias,''),m.body,m.timestamp_ns FROM messages m
+         LEFT JOIN chat_aliases a ON a.jid=m.chat_jid
 		 WHERE m.rowid=(SELECT rowid FROM messages x WHERE x.chat_jid=m.chat_jid
 		 ORDER BY x.timestamp_ns DESC,x.rowid DESC LIMIT 1)
 		 ORDER BY m.timestamp_ns DESC LIMIT 200`)
@@ -165,7 +145,7 @@ func (d *DB) Chats(ctx context.Context) ([]Chat, error) {
 	for rows.Next() {
 		var c Chat
 		var ns int64
-		if err := rows.Scan(&c.JID, &c.LastBody, &ns); err != nil {
+		if err := rows.Scan(&c.JID, &c.Alias, &c.LastBody, &ns); err != nil {
 			return nil, err
 		}
 		c.Timestamp = time.Unix(0, ns)
