@@ -32,9 +32,11 @@ func Resolve() (Paths, error) {
 	if err != nil {
 		return Paths{}, fmt.Errorf("resolve data directory: %w", err)
 	}
+	// #nosec G703 -- The path is deliberately selected by the local process owner via WHATSHELL_HOME or XDG_DATA_HOME.
 	if err := os.MkdirAll(base, 0o700); err != nil {
 		return Paths{}, fmt.Errorf("create data directory: %w", err)
 	}
+	// #nosec G703 -- The path is deliberately selected by the local process owner via WHATSHELL_HOME or XDG_DATA_HOME.
 	baseInfo, err := os.Lstat(base)
 	if err != nil {
 		return Paths{}, err
@@ -42,23 +44,27 @@ func Resolve() (Paths, error) {
 	if !baseInfo.IsDir() {
 		return Paths{}, fmt.Errorf("data root is not a real directory: %s", base)
 	}
+	// #nosec G703 -- The path is deliberately selected by the local process owner via WHATSHELL_HOME or XDG_DATA_HOME.
 	if err := os.Chmod(base, 0o700); err != nil {
 		return Paths{}, fmt.Errorf("protect data directory: %w", err)
 	}
 	for _, folder := range []string{"uploads", "downloads"} {
 		path := filepath.Join(base, folder)
-		if err := os.MkdirAll(path, 0o700); err != nil {
+		// #nosec G703 -- The path is deliberately selected by the local process owner via WHATSHELL_HOME or XDG_DATA_HOME.
+	if err := os.MkdirAll(path, 0o700); err != nil {
 			return Paths{}, fmt.Errorf("create %s: %w", folder, err)
 		}
 		// Never accept a symlink pretending to be a private folder.
-		info, err := os.Lstat(path)
+		// #nosec G703 -- The path is deliberately selected by the local process owner via WHATSHELL_HOME or XDG_DATA_HOME.
+	info, err := os.Lstat(path)
 		if err != nil {
 			return Paths{}, err
 		}
 		if !info.IsDir() {
 			return Paths{}, fmt.Errorf("%s is not a directory", path)
 		}
-		if err := os.Chmod(path, 0o700); err != nil {
+		// #nosec G703 -- The path is deliberately selected by the local process owner via WHATSHELL_HOME or XDG_DATA_HOME.
+	if err := os.Chmod(path, 0o700); err != nil {
 			return Paths{}, err
 		}
 	}
