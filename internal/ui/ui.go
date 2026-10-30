@@ -105,11 +105,12 @@ func New(archive *store.DB, client *wa.Client, paths config.Paths) *UI {
 		u.width = w
 		u.height = h
 		side := 0
-		if w >= 82 {
+		switch {
+		case w >= 82:
 			side = 27
-		} else if w >= 60 {
+		case w >= 60:
 			side = 20
-		} else if w >= 38 && u.showSidebar {
+		case w >= 38 && u.showSidebar:
 			side = 16
 		}
 		u.body.ResizeItem(u.chatList, side, 0)
