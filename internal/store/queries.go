@@ -35,7 +35,7 @@ func (d *DB) Search(ctx context.Context, query string, limit int) ([]SearchResul
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result := make([]SearchResult, 0)
 	for rows.Next() {
 		var r SearchResult
