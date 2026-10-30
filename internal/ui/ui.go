@@ -70,8 +70,6 @@ type UI struct {
 	loginInstructions *tview.TextView
 	loginSpacer       tview.Primitive
 	loginQR           *tview.TextView
-	loginQRRow        *tview.Flex
-	loginQRCenter     *tview.Flex
 	loginState        *tview.TextView
 	loginBack         *tview.Button
 	loginExpand       *tview.Button
