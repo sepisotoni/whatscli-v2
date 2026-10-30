@@ -1,0 +1,72 @@
+name: Go Quality & Security
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: format / vet / race / pure-Go build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: go.mod
+      - name: Resolve pinned dependencies
+        run: go mod tidy && go mod verify
+      - name: Custom vet & style checks
+        run: bash scripts/check.sh
+      - name: Tests with race detection
+        run: go test -race -count=1 ./...
+      - name: Coverage
+        run: go test -coverprofile=coverage.out ./...
+      - name: Verify pure-Go static build
+        env:
+          CGO_ENABLED: '0'
+        run: go build -trimpath -o /tmp/whatshell ./cmd/whatshell
+
+  lint:
+    name: golangci-lint v2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: go.mod
+      - name: Resolve dependencies
+        run: go mod tidy
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          args: --timeout=7m
+
+  staticcheck:
+    name: staticcheck / vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: go.mod
+      - name: Resolve dependencies
+        run: go mod tidy
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@v0.8.1
+      - name: Static analysis
+        run: staticcheck ./...
+      - name: Source security scan (gosec)
+        run: go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 -severity high -confidence high ./...
+      - name: Vulnerability database scan
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
