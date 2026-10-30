@@ -34,6 +34,15 @@ jobs:
         env:
           CGO_ENABLED: '0'
         run: go build -trimpath -o /tmp/whatshell ./cmd/whatshell
+      - name: Offline diagnostics smoke test
+        env:
+          WHATSHELL_HOME: ${{ runner.temp }}/whatscli-doctor-smoke
+        run: |
+          /tmp/whatshell --doctor
+          test -d "$WHATSHELL_HOME/uploads"
+          test -d "$WHATSHELL_HOME/downloads"
+          test ! -e "$WHATSHELL_HOME/history.sqlite3"
+          test ! -e "$WHATSHELL_HOME/session.sqlite3"
 
   lint:
     name: golangci-lint v2
