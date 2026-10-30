@@ -77,18 +77,18 @@ type UI struct {
 	qrText            string
 	qrWidth           int
 	qrHeight          int
-	welcomeGlow      *tview.TextView
-	agreementText    *tview.TextView
-	agreementStatus  *tview.TextView
-	agreementCheck   *tview.Checkbox
-	agreementNext    *tview.Button
-	agreementBack    *tview.Button
-	agreementCard    *tview.Flex
-	agreementOuter   *tview.Flex
-	agreementPage    *tview.Flex
-	welcomePage      *tview.Flex
-	loginPage        *tview.Flex
-	agreed           bool
+	welcomeGlow       *tview.TextView
+	agreementText     *tview.TextView
+	agreementStatus   *tview.TextView
+	agreementCheck    *tview.Checkbox
+	agreementNext     *tview.Button
+	agreementBack     *tview.Button
+	agreementCard     *tview.Flex
+	agreementOuter    *tview.Flex
+	agreementPage     *tview.Flex
+	welcomePage       *tview.Flex
+	loginPage         *tview.Flex
+	agreed            bool
 }
 
 func New(archive *store.DB, client *wa.Client, paths config.Paths) *UI {
