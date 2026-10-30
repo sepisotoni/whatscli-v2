@@ -52,7 +52,7 @@ def main(binary: str) -> None:
                         break
                 raise RuntimeError(f"missing UI text {needle!r} (exit={proc.poll()}, output={bytes(output[-800:])!r})")
 
-            until(b"Welcome to WhatsCLI")
+            until(b"Get started")  # Styled heading uses terminal colour escapes.
             os.write(master, b"\r")  # Get started -> disclosure, not login.
             until(b"Independent and unofficial")
             # Trying Continue without acknowledgement must not open QR login.
