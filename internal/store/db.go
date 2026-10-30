@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/sepisotoni/whatshell-go/internal/config"
 	sqlite "modernc.org/sqlite"
 )
 
@@ -57,6 +58,9 @@ type Version struct {
 }
 
 func Open(ctx context.Context, path string) (*DB, error) {
+	if err := config.ProtectFile(path); err != nil {
+		return nil, fmt.Errorf("protect archive: %w", err)
+	}
 	db, err := sql.Open("sqlite", DSN(path))
 	if err != nil {
 		return nil, err
