@@ -59,7 +59,7 @@ func New(ctx context.Context, sessionPath string, archive *store.DB) (*Client, e
 		api: whatsmeow.NewClient(device, nil), device: container,
 		archive: archive, path: sessionPath,
 	}
-	c.api.AddEventHandler(c.onEvent)
+	// WhatsMeow owns reconnect/backoff; never blindly retry sent messages.\n	c.api.InitialAutoReconnect = true\n	c.api.AddEventHandler(c.onEvent)
 	return c, nil
 }
 

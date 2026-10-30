@@ -14,7 +14,7 @@
 - Add unit tests for archive query methods and path security.
 - **Gate:** compile and run the full toolchain in CI, link test account, and execute a real SSH/tmux acceptance test.
 
-## v0.3 — Message UX and protocol parity
+## v0.2.1 — Schema upgrades and local aliases\n- Transactional schema v2 upgrade from pre-versioned archives, preserving cached messages and previous versions.\n- Private local-only `/alias NAME` and `/alias -` for persistent chat display names.\n- WhatsMeow initial reconnect for linked accounts; no blind message retransmission.\n- Unit tests for migrations, downgrade refusal and aliases.\n\n## v0.3 — Message UX and protocol parity
 - Contacts, group names and avatars; delivery status per group member.
 - Poll voting, live result decryption, persistent poll metadata.
 - Reliable reconnect, offline outgoing queue, media progress and cancellation.

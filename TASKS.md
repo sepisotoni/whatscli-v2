@@ -3,7 +3,7 @@
 **Repository:** https://github.com/sepisotoni/WhatsCLI  
 **Last planning review:** 2026-10-30  
 **Stage:** v0.2 development → v0.3  
-**Estimated overall completion: 42%** (weighted scope estimate; not a verified measure of functionality).  
+**Estimated overall completion: 45%** (weighted scope estimate; not a verified measure of functionality).  
 **Evidence:** The Go CI has passed, including race tests, build, lint, static analysis and security scans. Real WhatsApp account + SSH acceptance cases [A01–A14](docs/ACCEPTANCE.md) have **not** been completed.
 
 ## How this plan works
@@ -18,15 +18,15 @@
 | Workstream | Total weight | Earned | Evidence / biggest gap |
 |---|---:|---:|---|
 | Foundation & project tooling | 8 | 7 | Go app, CI, GitHub releases configured; no production tag |
-| SQLite archive & sync reliability | 14 | 8 | Edit versions, tombstones, search, backup; migrations, recovery and full history proof outstanding |
+| SQLite archive & sync reliability | 14 | 10 | Edit versions, tombstones, search, backup; migrations, recovery and full history proof outstanding |
 | Auth, connectivity & messaging | 14 | 4 | WhatsMeow implementation compiles; account-level verification missing |
 | Terminal UI, SSH & accessibility | 14 | 6 | Tview UI, commands, mouse, QR; real PTY and responsive acceptance missing |
-| Contacts, groups & chat controls | 8 | 0 | Contact names, group member UX and pin/mute controls missing |
+| Contacts, groups & chat controls | 8 | 1 | Contact names, group member UX and pin/mute controls missing |
 | Files, audio, images & video | 12 | 3 | JPEG/document upload and download source; streaming and real-media testing missing |
 | Polls, statuses & advanced features | 10 | 2 | Poll creation source; voting, results and statuses missing |
 | Security, privacy & operations | 10 | 6 | Private paths, basic safety, backup and source security; encrypted backup, restore and audits missing |
 | Tests, diagnostics & release quality | 10 | 6 | CI, unit/race tests and acceptance plan; doctor added in this milestone; real integration and tagged release missing |
-| **Total** | **100** | **42** | **Early development, not production-ready** |
+| **Total** | **100** | **45** | **Early development, not production-ready** |
 
 ## Milestone A — reliable first-run beta (P0)
 
@@ -41,7 +41,7 @@
 - [ ] **MSG-02**: Verify history sync, edits, revocations, late arrivals, and delivered/read state (**A05–A07**). [Spec §2](docs/IMPLEMENTATION_SPEC.md#2-sqlite-archive-and-data-integrity)
 - [ ] **UI-02**: Real SSH/tmux/PTY run across minimum dimensions, mouse, QR, resizing and Ctrl+C (**A12, A13**). [Spec §4](docs/IMPLEMENTATION_SPEC.md#4-terminal-experience-and-ssh)
 - [ ] **AUTH-02**: Verify logout revokes the correct session while preserving history (**A14**). [Spec §3](docs/IMPLEMENTATION_SPEC.md#3-whatsapp-transport-and-account-lifecycle)
-- [ ] **DATA-03**: Version schema migrations and test upgrades from both an empty database and previous schema. [Spec §2](docs/IMPLEMENTATION_SPEC.md#2-sqlite-archive-and-data-integrity)
+- [x] **DATA-03**: Version schema migrations and test upgrades from both an empty database and previous schema. [Spec §2](docs/IMPLEMENTATION_SPEC.md#2-sqlite-archive-and-data-integrity)
 - [ ] **REL-01**: Commit reproducible dependency sums, create first tested prerelease, and verify binary artifacts on Linux/macOS/Windows. [Spec §11](docs/IMPLEMENTATION_SPEC.md#11-builds-packaging-and-release)
 
 ## Milestone B — useful everyday terminal messaging (P1)
@@ -72,10 +72,10 @@
 1. ✅ Publish this plan and the [implementation specification](docs/IMPLEMENTATION_SPEC.md).
 2. ✅ Add a real offline `--doctor` path; test success, missing session, insecure files and corrupted history.
 3. ✅ Run CI on the change; correct issues before marking it green.
-4. ⏭️ Next: A01–A04 real account + SSH test; then work on automatic reconnect and contact names.
+4. ✅ Add transactional schema v2 migrations and local aliases with upgrade and persistence tests.\n5. ✅ Enable WhatsMeow initial reconnect for previously linked accounts (not an outgoing queue).\n6. ⏭️ Next: A01–A04 live account/SSH tests, actual contact names, safe outgoing queuing.
 
 ## Definition of done and blockers
 
 **Done:** Source merged, relevant Go tests passing, CI green, docs updated, and acceptance case successfully run when the task involves the actual WhatsApp account or SSH rendering. **Blocked (external):** A01–A14 need a consenting test WhatsApp account, an interactive SSH terminal, and a linked device. No amount of unit or GitHub Actions success can substitute for those tests.
 
-**Scope controls:** Do not claim that a cached archive can recover messages never observed, bypass view-once/ephemeral restrictions, or guarantee zero data loss. This is an unofficial third-party WhatsApp client; follow the platform's terms.
+**Progress note:** The 45% estimate adds two points for schema-safe archive upgrades and one for local aliases. CONTACT-01 and AUTH-03 remain open because network contact-name sync and guaranteed send retry are not implemented. No live WhatsApp account acceptance was performed.\n\n**Scope controls:** Do not claim that a cached archive can recover messages never observed, bypass view-once/ephemeral restrictions, or guarantee zero data loss. This is an unofficial third-party WhatsApp client; follow the platform's terms.

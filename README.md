@@ -100,7 +100,7 @@ For reliable colors, use a UTF-8 terminal with a working `$TERM` entry (commonly
 | **Ctrl + C** | Exit without unlinking |
 | `/help` | Show built-in help |
 | `/chat 27123456789` | Open a chat by country-code phone number |
-| `/chats` | Choose a cached conversation |
+| `/chats` | Choose a cached conversation |\n| `/alias NAME` | Set a local-only chat name (`/alias -` clears it) |
 | `/search text` | Search messages stored on this machine |
 | `/versions MESSAGE_ID` | Read cached prior versions of an edited message |
 | `/attach photo.jpg` | Send a file staged in `uploads/` (up to 16 MiB) |
@@ -112,7 +112,7 @@ For reliable colors, use a UTF-8 terminal with a working `$TERM` entry (commonly
 
 Typing `/` in the message input opens a **live-filtered command palette**. Use Tab to complete a suggestion; commands appear as you type.
 
-## 📂 Sending files through SSH
+Local chat aliases stay entirely in the on-disk archive; they never change a WhatsApp contact. The archive upgrades old, unversioned v0.2 SQLite layouts transactionally to schema v2 while preserving already-observed message history. Incompatible future schemas are refused rather than downgraded. Back up history before upgrading development builds.\n\n## 📂 Sending files through SSH
 
 A conventional SSH terminal cannot accept operating-system drag-and-drop into a remote program. Upload attachments with SFTP first:
 
