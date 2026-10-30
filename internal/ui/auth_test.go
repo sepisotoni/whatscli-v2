@@ -109,7 +109,9 @@ func TestWelcomeLogoAnimationAndBorderlessQR(t *testing.T) {
 	}
 	ctx := context.Background()
 	db, err := store.Open(ctx, filepath.Join(t.TempDir(), "archive.sqlite3"))
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer func() { _ = db.Close() }()
 	view := New(db, nil, config.Paths{})
 	view.PreviewOnboarding()
@@ -120,7 +122,9 @@ func TestWelcomeLogoAnimationAndBorderlessQR(t *testing.T) {
 	view.showAgreement()
 	view.agreementCheck.SetChecked(true)
 	view.acceptAgreement()
-	if err := view.handleQR("not-a-real-whatsapp-token"); err != nil { t.Fatal(err) }
+	if err := view.handleQR("not-a-real-whatsapp-token"); err != nil {
+		t.Fatal(err)
+	}
 	if !strings.Contains(view.loginQR.GetText(true), "█") {
 		t.Fatal("QR modules missing after layout")
 	}
