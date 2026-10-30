@@ -156,7 +156,7 @@ func (d *DB) Chats(ctx context.Context) ([]Chat, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var chats []Chat
 	for rows.Next() {
 		var c Chat
@@ -183,7 +183,7 @@ func (d *DB) Messages(ctx context.Context, chat string, limit int) ([]Message, e
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var messages []Message
 	for rows.Next() {
 		var m Message
@@ -204,7 +204,7 @@ func (d *DB) Versions(ctx context.Context, chat, id string) ([]Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var versions []Version
 	for rows.Next() {
 		var v Version
