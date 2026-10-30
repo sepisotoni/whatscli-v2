@@ -1,0 +1,37 @@
+name: Release binaries
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.3'
+          cache: true
+      - name: Verify dependencies and tests
+        run: |
+          go mod tidy
+          go mod verify
+          go test ./...
+      - name: Cross-compile without CGO
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            os="${target%/*}"; arch="${target#*/}"
+            suffix=""; if [[ "$os" == windows ]]; then suffix=".exe"; fi
+            GOOS="$os" GOARCH="$arch" go build -trimpath -ldflags='-s -w' -o "dist/whatshell-${os}-${arch}${suffix}" ./cmd/whatshell
+          done
+          cd dist && sha256sum * > SHA256SUMS
+      - name: Publish tagged release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
