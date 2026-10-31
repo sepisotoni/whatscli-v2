@@ -17,7 +17,7 @@ jobs:
     name: format / vet / race / pure-Go build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version: '1.27.3'
@@ -58,7 +58,7 @@ jobs:
     name: golangci-lint v2
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version: '1.27.3'
@@ -74,7 +74,7 @@ jobs:
     name: staticcheck / vulnerability scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version: '1.27.3'
