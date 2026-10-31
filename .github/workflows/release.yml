@@ -92,7 +92,7 @@ jobs:
           dist/whatscli-linux-amd64 --version | grep -F "WhatsCLI ${RELEASE_TAG}"
           (cd dist && sha256sum whatscli-* > SHA256SUMS)
       - name: Publish assets and version tag
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
           target_commitish: ${{ github.sha }}
