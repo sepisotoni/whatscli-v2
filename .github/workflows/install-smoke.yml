@@ -19,7 +19,7 @@ jobs:
     name: install current release / verify / uninstall
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install actual published release with checksum verification
         env:
           WHATSCLI_INSTALL_DIR: ${{ runner.temp }}/whatscli-install-smoke
